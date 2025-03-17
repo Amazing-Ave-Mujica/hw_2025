@@ -21,8 +21,8 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 
-run:
-	python3 tools/run.py tools/interactor.exe data/sample.in build/code_craft.exe
+run: $(EXEC)
+	python3 tools/run.py tools/interactor.exe data/sample_practice.in build/code_craft.exe
 
 submit:
 	@zip -r submission.zip src CMakeLists.txt
@@ -31,6 +31,6 @@ format:
 	clang-format -i $(SRC_DIR)/*.cpp
 
 clean:
-	rm -f $(OBJ) $(EXEC)
+	rm -f $(BUILD_DIR)/*
 
 .PHONY: all clean format run submit
