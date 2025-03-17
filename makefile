@@ -29,6 +29,11 @@ submit:
 
 format:
 	clang-format -i $(SRC_DIR)/*.cpp
+	clang-format -i $(SRC_DIR)/include/*.h
+
+tidy:
+	clang-tidy $(SRC_DIR)/*.cpp
+	clang-tidy $(SRC_DIR)/include/*.h
 
 clean:
 	rm -f $(BUILD_DIR)/*
