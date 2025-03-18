@@ -1,11 +1,11 @@
 #pragma once
 
+#include "object.h"
+#include "task.h"
 #include <list>
-#include <vector>
 #include <memory>
 #include <unordered_map>
-#include "task.h"
-#include "object.h"
+#include <vector>
 
 // 存的是要到磁盘的第几个块读数据
 struct RTQ {
@@ -41,10 +41,8 @@ private:
 // 每个 object 一个 TaskManager
 class TaskManager {
 public:
-  explicit TaskManager(int n) : mask_((1 << n) - 1) {
-    l_.resize(mask_);
-  }
-  
+  explicit TaskManager(int n) : mask_((1 << n) - 1) { l_.resize(mask_); }
+
   void NewTask(std::unique_ptr<Task> ptr) {
     l_[0].emplace_back(std::move(ptr));
   }
@@ -93,13 +91,9 @@ public:
     task_mgr_[oid].NewTask(std::move(ptr));
   }
 
-  void PushRTQ(int did, int blo) {
-    q_[did].Push(blo);
-  }
+  void PushRTQ(int did, int blo) { q_[did].Push(blo); }
 
-  auto GetRT(int did) -> int {
-    return q_[did].Front();
-  }
+  auto GetRT(int did) -> int { return q_[did].Front(); }
 
   void Delete(int oid) {
     assert(oid < task_mgr_.size());
@@ -128,9 +122,10 @@ private:
     需要一个数据结构来给每个磁盘单独维护读队列
     支持：
       按照某种方法排序（如先进先出）
-      删除其中某个属性 = xxx 的所有元素 （用于其他磁盘读取了同样的块需要删，或者删除了某个 objct）
+      删除其中某个属性 = xxx 的所有元素
+    （用于其他磁盘读取了同样的块需要删，或者删除了某个 objct）
   */
   ObjectPool *obj_pool_;
   std::vector<RTQ> q_;
-  std::vector<TaskManager> task_mgr_;  
+  std::vector<TaskManager> task_mgr_;
 };

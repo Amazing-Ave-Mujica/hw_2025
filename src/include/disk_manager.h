@@ -1,22 +1,21 @@
 #pragma once
 
-#include <vector>
 #include "disk.h"
 #include "object.h"
 #include "scheduler.h"
+#include <vector>
 
 class DiskManager {
 public:
-  DiskManager(ObjectPool *obj_pool, Scheduler * scheduler, int N, int V, int G) : disk_cnt_(N), obj_pool_(obj_pool), scheduler_(scheduler), life_(G) {
+  DiskManager(ObjectPool *obj_pool, Scheduler *scheduler, int N, int V, int G)
+      : disk_cnt_(N), obj_pool_(obj_pool), scheduler_(scheduler), life_(G) {
     disks_.reserve(disk_cnt_);
     for (int i = 0; i < disk_cnt_; i++) {
       disks_.emplace_back(i, V);
     }
   }
 
-  auto GetDiskCnt() const -> int {
-    return disk_cnt_;
-  }
+  auto GetDiskCnt() const -> int { return disk_cnt_; }
 
   // 插入 oid 的 kth 个副本
   auto Insert(int oid, int kth) -> bool {
@@ -33,9 +32,7 @@ public:
     return false;
   }
 
-  void Delete(int did, int blo) {
-    disks_[did].Delete(blo);
-  }
+  void Delete(int did, int blo) { disks_[did].Delete(blo); }
 
   void Read(int did) {
     int time = life_;
@@ -56,7 +53,6 @@ public:
       disk.Pass(time);
     }
   }
-  
 
 private:
   const int disk_cnt_;

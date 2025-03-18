@@ -5,7 +5,8 @@
 #include <vector>
 
 class Disk {
-friend class DiskManager;
+  friend class DiskManager;
+
 public:
   Disk(int disk_id, int V) : disk_id_(disk_id), capacity_(V) {
     storage_.resize(capacity_);
@@ -56,21 +57,17 @@ public:
   void Pass(int &time) {
     --time;
     prev_is_rd_ = false;
-    itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1; 
+    itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1;
   }
 
-  auto GetItr() -> int {
-    return itr_;
-  }
+  auto GetItr() -> int { return itr_; }
 
-  auto GetStorageAt(int idx) -> std::pair<int, int> {
-    return storage_[idx];
-  }
+  auto GetStorageAt(int idx) -> std::pair<int, int> { return storage_[idx]; }
 
 private:
   const int disk_id_;
   const int capacity_;
-  
+
   // Iterator
   int itr_;
   int prev_rd_cost_;

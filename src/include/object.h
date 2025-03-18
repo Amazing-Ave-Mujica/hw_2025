@@ -1,13 +1,13 @@
 #pragma once
 
-#include <cassert>
-#include <vector>
-#include <memory>
 #include <array>
+#include <cassert>
+#include <memory>
+#include <vector>
 
 struct Object {
   Object(int id, int tag, int size) : id_(id), tag_(tag), size_(size) {
-    for (auto & i : tdisk_) {
+    for (auto &i : tdisk_) {
       i.resize(size_);
     }
   }
@@ -21,9 +21,7 @@ struct Object {
 
 class ObjectPool {
 public:
-  explicit ObjectPool(int T) {
-    objs_.reserve(T + 105);
-  }
+  explicit ObjectPool(int T) { objs_.reserve(T + 105); }
 
   auto NewObject(int id, int tag, int size) -> int {
     objs_.emplace_back(std::make_shared<Object>(id, tag, size));

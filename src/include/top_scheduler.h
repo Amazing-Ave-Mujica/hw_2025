@@ -1,21 +1,24 @@
-#include <cstdlib>
-#include <unordered_map>
-#include <vector>
-#include <memory>
+#include "disk_manager.h"
+#include "object.h"
 #include "scheduler.h"
 #include "task.h"
-#include "object.h"
-#include "disk_manager.h"
+#include <cstdlib>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
 class TopScheduler {
 public:
-
-  TopScheduler(int *time, Scheduler *scheduler, ObjectPool* obj_pool, DiskManager *disk_mgr) : time_(time), scheduler_(scheduler), obj_pool_(obj_pool), disk_mgr_(disk_mgr) {};
+  TopScheduler(int *time, Scheduler *scheduler, ObjectPool *obj_pool,
+               DiskManager *disk_mgr)
+      : time_(time), scheduler_(scheduler), obj_pool_(obj_pool),
+        disk_mgr_(disk_mgr) {};
 
   // send to scheduler
-  void ReadRequest(int tid, int oid)  {
+  void ReadRequest(int tid, int oid) {
     auto object = obj_pool_->GetObjAt(oid);
-    scheduler_->NewTask(oid, std::make_unique<Task>(tid, oid, object->size_, *time_));
+    scheduler_->NewTask(
+        oid, std::make_unique<Task>(tid, oid, object->size_, *time_));
     // 简单挑选其中两个磁盘读
     int x = rand() % 3;
     int y = rand() % 3;
@@ -36,9 +39,9 @@ public:
       disk_mgr_->Insert(oid, i);
     }
   }
-  
+
   /*
-  delete some read_request 
+  delete some read_request
   send to scheduler
   */
   void DeleteRequest(int oid) {
@@ -47,7 +50,7 @@ public:
     for (int i = 0; i < 3; i++) {
       int did = object->idisk_[i];
       for (auto y : object->tdisk_[i]) {
-       disk_mgr_->Delete(did, y);
+        disk_mgr_->Delete(did, y);
       }
     }
   }
@@ -57,7 +60,6 @@ public:
       disk_mgr_->Read(i);
     }
   }
-
 
 private:
   int *time_;
