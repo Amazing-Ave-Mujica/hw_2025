@@ -63,12 +63,17 @@ public:
   }
 
   void Update(int x) {
+    std::cerr << mask_ << '\n';
+    assert((1 << x) <= mask_);
     for (int i = 0; i < mask_; i++) {
+      std::cerr << "sb " << i << '\n';
       if (((i >> x) & 1) == 0) {
+        assert((i | (1 << x)) != i);
         l_[i | (1 << x)].splice(l_[i | (1 << x)].end(), l_[i]);
         assert(l_[i].empty());
       }
     }
+    std::cerr << "Exit\n" << '\n'; 
   }
 
   void Clear() {
@@ -129,10 +134,12 @@ public:
 
   // 给 disk_mgr 调用的接口，当读了新的块的时候调用
   void Update(int oid, int y) {
+    std::cerr << "dfsdfadsfhkjsdavhckasdjvhksadf\n";
     auto object = obj_pool_->GetObjAt(oid);
     for (int i = 0; i < 3; i++) {
       int did = object->idisk_[i];
       q_[did].Remove(object->tdisk_[i][y]);
+      std::cerr << i << '\n';
     }
     task_mgr_[oid].Update(y);
   }

@@ -21,10 +21,13 @@ public:
     // 简单挑选其中两个磁盘读
     int x = rand() % 3;
     int y = rand() % 3;
+
     for (int i = 0; i < (object->size_ >> 1); i++) {
+      std::cerr << "obt"<< x << ' ' << object->tdisk_[x][i] << '\n';
       scheduler_->PushRTQ(x, object->tdisk_[x][i]);
     }
     for (int i = (object->size_ >> 1); i < object->size_; i++) {
+      std::cerr << "obt"<< y << ' ' << object->tdisk_[y][i] << '\n';
       scheduler_->PushRTQ(y, object->tdisk_[y][i]);
     }
   }

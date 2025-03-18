@@ -60,6 +60,7 @@ auto main() -> int {
     for (int i = 0; i < n_delete; i++) {
       int object_id;
       std::cin >> object_id;
+      --object_id;
       tes.DeleteRequest(object_id);
     }
     printer::PrintDelete();
@@ -86,7 +87,7 @@ auto main() -> int {
       int request_id;
       int object_id;
       std::cin >> request_id >> object_id;
-      tes.ReadRequest(request_id, object_id);
+      tes.ReadRequest(request_id, object_id - 1);
     }
     printer::PrintRead(n);
   };
@@ -95,5 +96,6 @@ auto main() -> int {
     delete_op();
     write_op();
     read_op();
+    tes.Read();
   }
 }

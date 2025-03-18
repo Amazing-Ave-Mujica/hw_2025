@@ -44,18 +44,22 @@ public:
   void Read(int did) {
     int time = life_;
     auto &disk = disks_[did];
+    std::cerr << "### " << disk.disk_id_ << '\n';
     while (time > 0) {
       auto x = scheduler_->GetRT(did);
+      std::cerr << x << '\n';
       if (x == -1) {
         break;
       }
       if (disk.itr_ == x) {
         if (disk.ReadCost() <= time) {
+          std::cerr << "dfsdfadsfhkjsdavhckasdjvhksadf\n";
           disk.Read(time);
           printer::ReadAddRead(did, 1);
           auto [oid, y] = disk.GetStorageAt(x);
           scheduler_->Update(oid, y);
         }
+        std::cerr << "dfsdfadsfhkjsdavhckasdjvhksadf\n";
         break;
       }
       disk.Pass(time);
