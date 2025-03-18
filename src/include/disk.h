@@ -1,0 +1,81 @@
+#include <cassert>
+#include <set>
+#include <vector>
+
+class Disk {
+friend class DiskManager;
+public:
+  Disk(int disk_id, int V) : disk_id_(disk_id), capacity_(V) {
+    storage_.resize(capacity_);
+    for (int i = 0; i < capacity_; i++) {
+      free_block_.insert(i);
+    }
+    free_size_ = capacity_;
+  }
+
+  auto Write(int oid, int y) -> int {
+    auto it = free_block_.begin();
+    assert(it != free_block_.end());
+    int idx = *it;
+    storage_[idx] = {oid, y};
+    free_block_.erase(it);
+    --free_size_;
+    return idx;
+  }
+
+  void Delete(int idx) {
+    assert(idx >= 0 && idx < capacity_);
+    if (free_block_.find(idx) != free_block_.end()) {
+      return;
+    }
+    storage_[idx] = {-1, -1};
+    free_block_.insert(idx);
+    ++free_size_;
+  }
+
+  auto ReadCost() -> int {
+    if (prev_is_rd_) {
+      return std::max(16, (prev_rd_cost_ + 1) * 4 / 5);
+    }
+    return 64;
+  }
+
+  void Read(int &time) {
+    time -= (prev_rd_cost_ = ReadCost());
+    prev_is_rd_ = true;
+    itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1;
+  }
+
+  void Jump(int &time) {
+    assert(false);
+    prev_is_rd_ = false;
+  }
+
+  void Pass(int &time) {
+    --time;
+    prev_is_rd_ = false;
+    itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1; 
+  }
+
+  auto GetItr() -> int {
+    return itr_;
+  }
+
+  auto GetStorageAt(int idx) -> std::pair<int, int> {
+    return storage_[idx];
+  }
+
+private:
+  const int disk_id_;
+  const int capacity_;
+  
+  // Iterator
+  int itr_;
+  int prev_rd_cost_;
+  bool prev_is_rd_;
+
+  int free_size_;
+  std::set<int> free_block_;
+
+  std::vector<std::pair<int, int>> storage_;
+};

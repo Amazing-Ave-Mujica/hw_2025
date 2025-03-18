@@ -1,15 +1,22 @@
+#pragma once
+
 #include <cassert>
 #include <vector>
 #include <memory>
 #include <array>
 
 struct Object {
-  Object(int id, int tag, int size) : id_(id), tag_(tag), size_(size) {}
-  
-  std::array<int, 3> idisk_;
+  Object(int id, int tag, int size) : id_(id), tag_(tag), size_(size) {
+    for (auto & i : tdisk_) {
+      i.resize(size_);
+    }
+  }
+
   int id_;
   int tag_;
   int size_;
+  std::array<int, 3> idisk_;
+  std::vector<int> tdisk_[3];
 };
 
 class ObjectPool {
@@ -26,10 +33,6 @@ public:
   auto GetObjAt(int oid) -> std::shared_ptr<Object> {
     assert(oid >= 0 && oid < size_);
     return objs_[oid];
-  }
-
-  void SetIdisk(int oid, int idx, int disk_idx) {
-    objs_[oid]->idisk_[idx] = disk_idx;
   }
 
 private:
