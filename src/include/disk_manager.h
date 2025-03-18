@@ -1,4 +1,5 @@
-#include <cstddef>
+#pragma once
+
 #include <vector>
 #include "disk.h"
 #include "object.h"

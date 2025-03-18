@@ -46,7 +46,7 @@ public:
   }
   
   void NewTask(std::unique_ptr<Task> ptr) {
-    l_[0].emplace_back(ptr);
+    l_[0].emplace_back(std::move(ptr));
   }
 
   void Finish() {
