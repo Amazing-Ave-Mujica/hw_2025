@@ -34,6 +34,6 @@ public:
   }
 
 private:
-  int size_;
+  int size_{};
   std::vector<std::shared_ptr<Object>> objs_;
 };

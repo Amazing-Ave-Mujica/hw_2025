@@ -4,7 +4,6 @@
 #include "task.h"
 #include <cstdlib>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 class TopScheduler {
@@ -18,7 +17,7 @@ public:
   void ReadRequest(int tid, int oid) {
     auto object = obj_pool_->GetObjAt(oid);
     scheduler_->NewTask(
-        oid, std::make_unique<Task>(tid, oid, object->size_, *time_));
+        oid, std::make_unique<Task>(tid, oid, *time_));
     // 简单挑选其中两个磁盘读
     int x = rand() % 3;
     int y = rand() % 3;
@@ -33,7 +32,6 @@ public:
   // send to disk_mgr directly
   auto InsertRequest(int id, int size, int tag) -> int {
     int oid = obj_pool_->NewObject(id, tag, size);
-    assert(id == oid);
     scheduler_->NewTaskMgr(oid, size);
     for (int i = 0; i < 3; i++) {
       disk_mgr_->Insert(oid, i);

@@ -11,11 +11,7 @@
 auto main() -> int {
   std::ios::sync_with_stdio(false);
   std::cin.tie(nullptr);
-  int t;
-  int m;
-  int n;
-  int v;
-  int g;
+  int t, m, n, v, g; // NOLINT
   std::cin >> t >> m >> n >> v >> g;
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < (t - 1) / 1800 + 1; j++) {
