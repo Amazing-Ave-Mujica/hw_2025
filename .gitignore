@@ -7,8 +7,9 @@ result.txt
 /*.cmake
 /CMakeCache.text
 /code_craft
-/iteractor
 /run.py
+/interactor
+/Makefile
 #==============================================================================#
 # File extensions to be ignored anywhere in the tree.
 #==============================================================================#
