@@ -87,6 +87,7 @@ auto main() -> int {
       std::cin >> request_id >> object_id;
       tes.ReadRequest(request_id, object_id);
     }
+    printer::PrintRead(n);
   };
   for (timeslice = 1; timeslice <= t + 105; timeslice++) {
     sync();

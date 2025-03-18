@@ -3,6 +3,12 @@ result.txt
 /data
 /replay
 /.venv
+/CMakeFiles
+/*.cmake
+/CMakeCache.text
+/code_craft
+/iteractor
+/run.py
 #==============================================================================#
 # File extensions to be ignored anywhere in the tree.
 #==============================================================================#
