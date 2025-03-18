@@ -1,10 +1,8 @@
 #pragma once
 
-#include <vector>
-
 // only read task
 struct Task {
-  Task(int tid, int oid, int block_cnt, int timestamp)
+  Task(int tid, int oid, int timestamp)
       : tid_(tid), oid_(oid), timestamp_(timestamp) {}
   int tid_;
   int oid_;

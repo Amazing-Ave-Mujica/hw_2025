@@ -13,6 +13,7 @@ public:
     for (int i = 0; i < capacity_; i++) {
       free_block_.insert(i);
     }
+    prev_is_rd_ = false;
     free_size_ = capacity_;
   }
 
@@ -69,7 +70,7 @@ private:
   const int capacity_;
 
   // Iterator
-  int itr_;
+  int itr_{};
   int prev_rd_cost_;
   bool prev_is_rd_;
 

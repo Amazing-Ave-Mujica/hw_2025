@@ -15,6 +15,7 @@ namespace printer {
   int buf[3][1 << 20],top[3] = {0};
   std::string ops[10];
 
+  // NOLINTNEXTLINE
   enum{
     DELETE = 0,
     WRITE,
