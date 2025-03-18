@@ -65,12 +65,15 @@ namespace printer {
 
   auto PrintWrite(ObjectPool& obj_pool) -> void{
     for(int i = 0;i < top[WRITE];i++){
-      std::cout << buf[WRITE][i] << '\n';
+      std::cout << buf[WRITE][i] + 1 << '\n';
       auto obj = obj_pool.GetObjAt(buf[WRITE][i]);
       for(int j = 0;j < 3;j++){
-        std::cout << obj->idisk_[j] << ' ';
+
+        std::cerr << "WRITE: DISKNUM " << obj->idisk_[j] + 1 << '\n';
+        
+        std::cout << obj->idisk_[j] + 1 << ' ';
         for(auto it : obj->tdisk_[j]){
-          std::cout << it << ' ';
+          std::cout << it + 1 << ' ';
         }
         std::cout << '\n';
       }

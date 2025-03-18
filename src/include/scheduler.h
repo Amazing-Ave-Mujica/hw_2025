@@ -123,6 +123,7 @@ public:
         q_[did].Remove(y);
       }
     }
+    printer::AddDeleteObject(task_mgr_[oid]);
     task_mgr_[oid].Clear();
   }
 

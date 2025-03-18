@@ -9,6 +9,11 @@
 #include <iostream>
 
 auto main() -> int {
+
+#ifdef DEBUG
+  freopen("log", "w", stderr);
+#endif
+
   std::ios::sync_with_stdio(false);
   std::cin.tie(nullptr);
   int t, m, n, v, g; // NOLINT
