@@ -4,11 +4,12 @@
 #include "object.h"
 #include "scheduler.h"
 #include <vector>
+#include "printer.h"
 
 class DiskManager {
 public:
   DiskManager(ObjectPool *obj_pool, Scheduler *scheduler, int N, int V, int G)
-      : disk_cnt_(N), obj_pool_(obj_pool), scheduler_(scheduler), life_(G) {
+      : disk_cnt_(N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler) {
     disks_.reserve(disk_cnt_);
     for (int i = 0; i < disk_cnt_; i++) {
       disks_.emplace_back(i, V);
@@ -45,12 +46,14 @@ public:
       if (disk.itr_ == x) {
         if (disk.ReadCost() <= time) {
           disk.Read(time);
+          printer::ReadAddRead(did, 1);
           auto [oid, y] = disk.GetStorageAt(x);
           scheduler_->Update(oid, y);
         }
         break;
       }
       disk.Pass(time);
+      printer::ReadAddPass(did, 1);
     }
   }
 

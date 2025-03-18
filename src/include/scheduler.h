@@ -2,11 +2,17 @@
 
 #include "object.h"
 #include "task.h"
+#include "printer.h"
 #include <list>
 #include <memory>
 #include <unordered_map>
 #include <vector>
 
+class TaskManager;
+
+namespace printer{
+  void AddDeleteObject(TaskManager& t);
+};
 // 存的是要到磁盘的第几个块读数据
 struct RTQ {
 public:
@@ -49,7 +55,10 @@ public:
 
   void Finish() {
     while (!l_[mask_].empty()) {
-      assert(false);
+      for(auto& p : l_[mask_]){
+        printer::AddReadRequest(p->tid_);
+      }
+      l_[mask_].clear();
     }
   }
 
@@ -67,12 +76,22 @@ public:
       l_[i].clear();
     }
   }
-
+  friend void printer::AddDeleteObject(TaskManager& t);
 private:
   int mask_;
   // 状压 32 种块 读/未读 的状态
   std::vector<std::list<std::unique_ptr<Task>>> l_;
 };
+
+namespace printer {
+  void AddDeleteObject(TaskManager& t){
+    for(const auto &l : t.l_){
+      for(const auto &p : l ){
+        AddDeletedRequest(p->tid_);
+      }
+    }
+  }
+}
 
 class Scheduler {
 public:

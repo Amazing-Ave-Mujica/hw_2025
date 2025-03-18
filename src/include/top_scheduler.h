@@ -31,13 +31,14 @@ public:
   }
 
   // send to disk_mgr directly
-  void InsertRequest(int id, int size, int tag) {
+  auto InsertRequest(int id, int size, int tag) -> int {
     int oid = obj_pool_->NewObject(id, tag, size);
     assert(id == oid);
     scheduler_->NewTaskMgr(oid, size);
     for (int i = 0; i < 3; i++) {
       disk_mgr_->Insert(oid, i);
     }
+    return oid;
   }
 
   /*

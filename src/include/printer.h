@@ -1,3 +1,7 @@
+#pragma once
+
+#include "scheduler.h"
+#include <cstdio>
 #ifndef _PRINTER_H
 #define _PRINTER_H
 #include "object.h"
@@ -5,6 +9,7 @@
 #include <cstddef>
 #include <iostream>
 #include <string>
+
 
 namespace printer {
   int buf[3][1 << 20],top[3] = {0};
@@ -17,6 +22,7 @@ namespace printer {
   };
 
   void Clean(int idx){ 
+    std::cout.flush();
     top[idx] = 0; 
     for(auto & op : ops){
       op.clear();
@@ -85,8 +91,8 @@ namespace printer {
     }
     Clean(READ);
   }
-
-
 } // namespace printer
+
+
 
 #endif
