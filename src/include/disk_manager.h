@@ -53,13 +53,17 @@ public:
         if (disk.ReadCost() <= time) {
           disk.Read(time);
           printer::ReadAddRead(did, 1);
+         // std::cerr << "dfkljasklfdsaklfsdalkfjsdalkfjlksda\n";
           auto [oid, y] = disk.GetStorageAt(x);
           scheduler_->Update(oid, y);
         }
         break;
       }
-      disk.Pass(time);
-      printer::ReadAddPass(did, 1);
+      //disk.Pass(time);
+      //printer::ReadAddPass(did, 1);
+      assert(time == life_);
+      disk.Jump(time, x);
+      printer::ReadSetJump(did, x);
     }
   }
 

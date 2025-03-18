@@ -35,6 +35,7 @@ namespace printer {
   }
 
   void ReadAddPass(size_t DiskNum,int cnt) {
+    assert(false);
     for(int i = 0;i < cnt;i++){
       ops[DiskNum].push_back('p');
     } 

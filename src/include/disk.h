@@ -50,9 +50,10 @@ public:
     itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1;
   }
 
-  void Jump(int &time) {
-    assert(false);
+  void Jump(int &time, int x) {
     prev_is_rd_ = false;
+    time = 0;
+    itr_ = x;
   }
 
   void Pass(int &time) {

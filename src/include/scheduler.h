@@ -71,6 +71,7 @@ public:
         assert(l_[i].empty());
       }
     }
+    Finish();
   }
 
   void Clear() {
