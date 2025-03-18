@@ -24,7 +24,7 @@ namespace printer {
 
   void Clean(int idx){ 
     std::cout.flush();
-    top[idx] = 0; 
+    top[idx] = 0;
     for(auto & op : ops){
       op.clear();
     }

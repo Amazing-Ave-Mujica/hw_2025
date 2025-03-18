@@ -11,7 +11,7 @@
 auto main() -> int {
 
 #ifdef DEBUG
-  freopen("log", "w", stderr);
+  freopen("./log", "w", stderr);
 #endif
 
   std::ios::sync_with_stdio(false);
@@ -89,6 +89,7 @@ auto main() -> int {
       std::cin >> request_id >> object_id;
       tes.ReadRequest(request_id, object_id - 1);
     }
+    tes.Read();
     printer::PrintRead(n);
   };
   for (timeslice = 1; timeslice <= t + 105; timeslice++) {
@@ -96,6 +97,5 @@ auto main() -> int {
     delete_op();
     write_op();
     read_op();
-    tes.Read();
   }
 }
