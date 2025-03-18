@@ -5,7 +5,7 @@ result.txt
 /.venv
 /CMakeFiles
 /*.cmake
-/CMakeCache.text
+/CMakeCache.txt
 /code_craft
 /run.py
 /.interactor
