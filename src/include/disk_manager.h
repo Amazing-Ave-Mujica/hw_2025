@@ -23,11 +23,17 @@ public:
     auto object = obj_pool_->GetObjAt(oid);
     for (auto &disk : disks_) {
       if (disk.free_size_ >= object->size_) {
-        object->idisk_[kth] = disk.disk_id_;
-        for (int j = 0; j < object->size_; j++) {
-          object->tdisk_[kth][j] = disk.Write(oid, j);
+        bool exist = false;
+        for (int i = 0; i < kth; i++) {
+          exist |= (object->idisk_[i] == disk.disk_id_);
         }
-        return true;
+        if (!exist) {
+          object->idisk_[kth] = disk.disk_id_;
+          for (int j = 0; j < object->size_; j++) {
+            object->tdisk_[kth][j] = disk.Write(oid, j);
+          }
+          return true;
+        }
       }
     }
     return false;
