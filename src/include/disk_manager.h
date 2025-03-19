@@ -8,6 +8,11 @@
 #include <random>
 #include <vector>
 
+#ifndef _TIMESLICE
+#define _TIMESLICE
+extern int timeslice;
+#endif
+
 class DiskManager {
 public:
   DiskManager(ObjectPool *obj_pool, Scheduler *scheduler, int N, int V, int G)

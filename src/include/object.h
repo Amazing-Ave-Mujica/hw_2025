@@ -6,6 +6,11 @@
 #include <memory>
 #include <vector>
 
+#ifndef _TIMESLICE
+#define _TIMESLICE
+extern int timeslice;
+#endif
+
 struct Object {
   Object(int id, int tag, int size) : id_(id), tag_(tag), size_(size) {
     for (auto &i : tdisk_) {
@@ -32,9 +37,6 @@ public:
   }
 
   auto GetObjAt(int oid) -> std::shared_ptr<Object> {
-    if (oid < 0 || oid >= size_) {
-      int y = 1;
-    }
     assert(oid >= 0 && oid < size_);
     return objs_[oid];
   }

@@ -8,6 +8,12 @@
 #include <iostream>
 #include <string>
 
+
+#ifndef _TIMESLICE
+#define _TIMESLICE
+extern int timeslice;
+#endif
+
 namespace printer {
 int buf[3][1 << 20], top[3] = {0};
 std::string ops[10];

@@ -4,6 +4,11 @@
 #include <set>
 #include <vector>
 
+#ifndef _TIMESLICE
+#define _TIMESLICE
+extern int timeslice;
+#endif
+
 class Disk {
   friend class DiskManager;
 

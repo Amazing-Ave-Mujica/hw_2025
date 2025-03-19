@@ -6,6 +6,11 @@
 #include <memory>
 #include <vector>
 
+#ifndef _TIMESLICE
+#define _TIMESLICE
+extern int timeslice;
+#endif
+
 class TopScheduler {
 public:
   TopScheduler(int *time, Scheduler *scheduler, ObjectPool *obj_pool,

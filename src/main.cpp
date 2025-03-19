@@ -5,42 +5,45 @@
 #include "include/printer.h"
 #include "include/scheduler.h"
 #include "include/top_scheduler.h"
+#include "include/data.h"
 #include <cstdio>
 #include <iostream>
+
+int timeslice = 0;
 
 auto main() -> int {
   std::ios::sync_with_stdio(false);
   std::cin.tie(nullptr);
   int t, m, n, v, g; // NOLINT
   std::cin >> t >> m >> n >> v >> g;
+  
+  Data delete_data(m,(t - 1) / 1800 + 1),write_data(m,(t - 1) / 1800 + 1),read_data(m,(t - 1) / 1800 + 1); // NOLINT
+
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < (t - 1) / 1800 + 1; j++) {
-      int _;
-      std::cin >> _;
+      std::cin >> delete_data[i][j];
+    }
+  }
+  for (int i = 0; i < m; i++) {
+    for (int j = 0; j < (t - 1) / 1800 + 1; j++) {
+      std::cin >> write_data[i][j];
     }
   }
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < (t - 1) / 1800 + 1; j++) {
       int _;
-      std::cin >> _;
-    }
-  }
-  for (int i = 0; i < m; i++) {
-    for (int j = 0; j < (t - 1) / 1800 + 1; j++) {
-      int _;
-      std::cin >> _;
+      std::cin >> read_data[i][j];
     }
   }
 
   (std::cout << "OK\n").flush();
 
-  int timeslice = 0;
   ObjectPool pool(t);
   Scheduler none(&pool, n, t);
   DiskManager dm(&pool, &none, n, v, g);
   TopScheduler tes(&timeslice, &none, &pool, &dm);
 
-  auto sync = [&timeslice]() {
+  auto sync = []() {
     std::string ts;
     int time;
     std::cin >> ts >> time;

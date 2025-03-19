@@ -8,6 +8,11 @@
 #include <unordered_map>
 #include <vector>
 
+#ifndef _TIMESLICE
+#define _TIMESLICE
+extern int timeslice;
+#endif
+
 class TaskManager;
 
 namespace printer {
