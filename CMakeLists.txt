@@ -27,3 +27,11 @@ add_custom_target(run
 add_custom_target(debug
   python3 ../tools/run.py ../tools/interactor.exe ../data/sample_practice.in ./code_craft.exe -d
 )
+
+add_custom_target(submit
+    COMMAND ${CMAKE_COMMAND} -E tar cfv submission.zip --format=zip
+        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/CMakeLists.txt
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Creating ZIP archive of /src and CMakeLists.txt"
+)
