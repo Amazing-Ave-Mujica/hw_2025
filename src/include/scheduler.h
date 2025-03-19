@@ -38,13 +38,12 @@ public:
     return q_.back();
   }
 
-  auto Query(int x) -> bool {
-    for (auto sb : q_) {
-      if (sb == x) {
-        return true;
-      }
+  void Query() {
+    std::cerr << "\n";
+    for (int x : q_) {
+      std::cerr << x << ' ';
     }
-    return false;
+    std::cerr << '\n';
   }
 
 private:
@@ -61,7 +60,9 @@ public:
   void NewTask(std::unique_ptr<Task> ptr) {
     l_[0].emplace_back(std::move(ptr));
   }
-
+  // obj disk (x)
+  // RTQ remove(obj)
+  //  
   void Finish() {
     while (!l_[mask_].empty()) {
       for(auto& p : l_[mask_]){
@@ -110,7 +111,7 @@ class Scheduler {
 public:
   explicit Scheduler(ObjectPool *obj_pool, int N, int T) : obj_pool_(obj_pool) {
     task_mgr_.reserve(T + 105);
-    q_.resize(N);
+    q_.resize(N + N);
   }
 
   void NewTaskMgr(int oid, int size) {
@@ -123,15 +124,17 @@ public:
     task_mgr_[oid].NewTask(std::move(ptr));
   }
 
-  void PushRTQ(int did, int blo) { q_[did].Push(blo); }
+  void PushRTQ(int did, int blo) { 
+    q_[did].Push(blo); 
+  }
 
   auto GetRT(int did) -> int { return q_[did].Front(); }
 
+  auto QueryRTQ(int did) {
+    q_[did].Query();
+  }
+
   void Delete(int oid) {
-    assert(oid < task_mgr_.size());
-    if (oid < 0) {
-      int x = 2;
-    }
     auto object = obj_pool_->GetObjAt(oid);
     for (int i = 0; i < 3; i++) {
       int did = object->idisk_[i];
@@ -145,17 +148,10 @@ public:
 
   // 给 disk_mgr 调用的接口，当读了新的块的时候调用
   void Update(int oid, int y) {
-    static int sb = 0;
-    // if (oid < 0) {
-    //   ++sb;
-    //   std::cerr << sb << '\n';
-    //   return;
-    // }
     auto object = obj_pool_->GetObjAt(oid);
     for (int i = 0; i < 3; i++) {
       int did = object->idisk_[i];
       q_[did].Remove(object->tdisk_[i][y]);
-      assert(q_[did].Query(object->tdisk_[i][y]) == false);
     }
     task_mgr_[oid].Update(y);
   }

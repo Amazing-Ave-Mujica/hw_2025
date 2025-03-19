@@ -47,7 +47,6 @@ public:
     auto &disk = disks_[did];
     while (time > 0) {
       const auto x = scheduler_->GetRT(did);
-      assert(disk.GetStorageAt(x).first != -233);
       if (x == -1) {
         break;
       }
@@ -57,9 +56,6 @@ public:
           printer::ReadAddRead(did, 1);
           assert(x >= 0 && x < disk.capacity_);
           auto [oid, y] = disk.GetStorageAt(x);
-          if (oid < 0) {
-            std::cerr << oid << ' ' << y << '\n';
-          }
           scheduler_->Update(oid, y);
         }
         break;

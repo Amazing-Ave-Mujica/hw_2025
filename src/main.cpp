@@ -9,14 +9,8 @@
 #include <iostream>
 
 auto main() -> int {
- freopen(R"(D:\Documents\HW-2025\data\sample_practice.in)", "r", stdin);
- freopen("sbsb.txt", "w", stdout);
-// #ifdef DEBUG
-//   freopen("./log", "w", stderr);
-// #endif
-
-  // std::ios::sync_with_stdio(false);
-  // std::cin.tie(nullptr);
+  std::ios::sync_with_stdio(false);
+  std::cin.tie(nullptr);
   int t, m, n, v, g; // NOLINT
   std::cin >> t >> m >> n >> v >> g;
   for (int i = 0; i < m; i++) {

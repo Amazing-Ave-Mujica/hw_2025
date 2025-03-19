@@ -9,7 +9,7 @@ class Disk {
 
 public:
   Disk(int disk_id, int V) : disk_id_(disk_id), capacity_(V) {
-    storage_.resize(capacity_, {-10, -10});
+    storage_.resize(capacity_);
     for (int i = 0; i < capacity_; i++) {
       free_block_.insert(i);
     }
@@ -32,7 +32,7 @@ public:
     if (free_block_.find(idx) != free_block_.end()) {
       return;
     }
-    storage_[idx] = {-233, -233};
+    storage_[idx] = {-1, -1};
     free_block_.insert(idx);
     ++free_size_;
   }

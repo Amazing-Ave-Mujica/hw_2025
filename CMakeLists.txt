@@ -21,7 +21,7 @@ add_custom_target(check-clang-tidy
 )
 
 add_custom_target(run
-  python3 ../tools/run.py ../tools/interactor.exe ../data/sample_practice.in ./code_craft.exe -r
+  python3 ../tools/run.py ../tools/interactor.exe ../data/sample_practice.in ./code_craft.exe
 )
 
 add_custom_target(debug

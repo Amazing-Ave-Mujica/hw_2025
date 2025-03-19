@@ -1,5 +1,5 @@
 *.exe
-result.txt
+*.txt
 /data
 /replay
 /.venv
