@@ -1,8 +1,8 @@
 #pragma once
 
 #include "object.h"
-#include "task.h"
 #include "printer.h"
+#include "task.h"
 #include <list>
 #include <memory>
 #include <unordered_map>
@@ -10,8 +10,8 @@
 
 class TaskManager;
 
-namespace printer{
-  void AddDeleteObject(TaskManager& t);
+namespace printer {
+void AddDeleteObject(TaskManager &t);
 };
 // 存的是要到磁盘的第几个块读数据
 struct RTQ {
@@ -62,10 +62,10 @@ public:
   }
   // obj disk (x)
   // RTQ remove(obj)
-  //  
+  //
   void Finish() {
     while (!l_[mask_].empty()) {
-      for(auto& p : l_[mask_]){
+      for (auto &p : l_[mask_]) {
         printer::AddReadRequest(p->tid_);
       }
       l_[mask_].clear();
@@ -90,7 +90,8 @@ public:
     }
   }
 
-  friend void printer::AddDeleteObject(TaskManager& t);
+  friend void printer::AddDeleteObject(TaskManager &t);
+
 private:
   int mask_;
   // 状压 32 种块 读/未读 的状态
@@ -98,14 +99,14 @@ private:
 };
 
 namespace printer {
-  void AddDeleteObject(TaskManager& t){
-    for(const auto &l : t.l_){
-      for(const auto &p : l ){
-        AddDeletedRequest(p->tid_);
-      }
+void AddDeleteObject(TaskManager &t) {
+  for (const auto &l : t.l_) {
+    for (const auto &p : l) {
+      AddDeletedRequest(p->tid_);
     }
   }
 }
+} // namespace printer
 
 class Scheduler {
 public:
@@ -124,15 +125,11 @@ public:
     task_mgr_[oid].NewTask(std::move(ptr));
   }
 
-  void PushRTQ(int did, int blo) { 
-    q_[did].Push(blo); 
-  }
+  void PushRTQ(int did, int blo) { q_[did].Push(blo); }
 
   auto GetRT(int did) -> int { return q_[did].Front(); }
 
-  auto QueryRTQ(int did) {
-    q_[did].Query();
-  }
+  auto QueryRTQ(int did) { q_[did].Query(); }
 
   void Delete(int oid) {
     auto object = obj_pool_->GetObjAt(oid);

@@ -67,9 +67,9 @@ public:
 
   auto GetItr() -> int { return itr_; }
 
-  auto GetStorageAt(int idx) -> std::pair<int, int> { 
+  auto GetStorageAt(int idx) -> std::pair<int, int> {
     assert(idx >= 0 && idx < capacity_);
-    return storage_[idx]; 
+    return storage_[idx];
   }
 
 private:

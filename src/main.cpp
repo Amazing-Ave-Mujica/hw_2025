@@ -39,17 +39,16 @@ auto main() -> int {
   Scheduler none(&pool, n, t);
   DiskManager dm(&pool, &none, n, v, g);
   TopScheduler tes(&timeslice, &none, &pool, &dm);
-  
-  auto sync = [&timeslice](){
+
+  auto sync = [&timeslice]() {
     std::string ts;
     int time;
     std::cin >> ts >> time;
     (std::cout << "TIMESTAMP " << timeslice << '\n').flush();
     return time == timeslice;
   };
-  
-  auto delete_op = [&]()
-  {
+
+  auto delete_op = [&]() {
     int n_delete;
     std::cin >> n_delete;
     for (int i = 0; i < n_delete; i++) {
@@ -60,11 +59,11 @@ auto main() -> int {
     }
     printer::PrintDelete();
   };
-  
-  auto write_op = [&](){
+
+  auto write_op = [&]() {
     int n_write;
     std::cin >> n_write;
-    for(int i = 0;i < n_write;i++){
+    for (int i = 0; i < n_write; i++) {
       int id;
       int size;
       int tag;
@@ -76,10 +75,10 @@ auto main() -> int {
     printer::PrintWrite(pool);
   };
 
-  auto read_op = [&](){
+  auto read_op = [&]() {
     int n_read;
     std::cin >> n_read;
-    for(int i = 0;i < n_read;i++){
+    for (int i = 0; i < n_read; i++) {
       int request_id;
       int object_id;
       std::cin >> request_id >> object_id;

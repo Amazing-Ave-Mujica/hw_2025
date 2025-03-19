@@ -2,9 +2,11 @@
 
 #include "disk.h"
 #include "object.h"
-#include "scheduler.h"
-#include <vector>
 #include "printer.h"
+#include "scheduler.h"
+#include <algorithm>
+#include <random>
+#include <vector>
 
 class DiskManager {
 public:
@@ -20,9 +22,13 @@ public:
 
   // 插入 oid 的 kth 个副本
   auto Insert(int oid, int kth) -> bool {
-    assert(oid >= 0);
     auto object = obj_pool_->GetObjAt(oid);
-    for (auto &disk : disks_) {
+    std::vector<int> sf(disks_.size());
+    std::iota(sf.begin(), sf.end(), 0);
+    std::mt19937 rng(time(nullptr));
+    std::shuffle(sf.begin(), sf.end(), rng);
+    for (auto od : sf) {
+      auto &disk = disks_[od];
       if (disk.free_size_ >= object->size_) {
         bool exist = false;
         for (int i = 0; i < kth; i++) {
@@ -60,8 +66,8 @@ public:
         }
         break;
       }
-      //disk.Pass(time);
-      //printer::ReadAddPass(did, 1);
+      // disk.Pass(time);
+      // printer::ReadAddPass(did, 1);
       assert(time == life_);
       disk.Jump(time, x);
       printer::ReadSetJump(did, x + 1);

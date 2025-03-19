@@ -17,8 +17,7 @@ public:
     assert(oid >= 0);
     assert(obj_pool_->IsValid(oid));
     auto object = obj_pool_->GetObjAt(oid);
-    scheduler_->NewTask(
-        oid, std::make_unique<Task>(tid, oid, *time_));
+    scheduler_->NewTask(oid, std::make_unique<Task>(tid, oid, *time_));
     // 简单挑选其中两个磁盘读
     int x = rand() % 3;
     int y = rand() % 3;

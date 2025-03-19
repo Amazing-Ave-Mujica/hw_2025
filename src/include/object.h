@@ -39,13 +39,9 @@ public:
     return objs_[oid];
   }
 
-  auto IsValid(int oid) -> bool {
-    return objs_[oid]->valid_;
-  }
+  auto IsValid(int oid) -> bool { return objs_[oid]->valid_; }
 
-  void Drop(int oid) {
-    objs_[oid]->valid_ = false;
-  }
+  void Drop(int oid) { objs_[oid]->valid_ = false; }
 
 private:
   int size_{};
