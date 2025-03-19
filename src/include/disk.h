@@ -64,7 +64,6 @@ public:
   }
 
   void Pass(int &time) {
-    assert(false);
     --time;
     prev_is_rd_ = false;
     itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1;

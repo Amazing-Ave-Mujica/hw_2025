@@ -2,11 +2,11 @@
 
 #include "disk.h"
 #include "object.h"
+#include "printer.h"
 #include "scheduler.h"
 #include <algorithm>
 #include <random>
 #include <vector>
-#include "printer.h"
 
 #ifndef _TIMESLICE
 #define _TIMESLICE
@@ -57,7 +57,7 @@ public:
     int time = life_;
     auto &disk = disks_[did];
     while (time > 0) {
-      const auto x = scheduler_->GetRT(did);
+      const auto x = scheduler_->GetRT(did, disk.itr_);
       if (x == -1) {
         break;
       }
@@ -71,12 +71,25 @@ public:
         }
         break;
       }
-      //disk.Pass(time);
-      //printer::ReadAddPass(did, 1);
-      assert(time == life_);
-      disk.Jump(time, x);
-      printer::ReadSetJump(did, x + 1);
+      if (ReadDist(did, x) >= life_) {
+        disk.Jump(time, x);
+        printer::ReadSetJump(did, x + 1);
+      } else {
+        disk.Pass(time);
+        printer::ReadAddPass(did, 1);
+      }
     }
+  }
+
+  auto ReadDist(int did, int dest) -> int {
+    auto &disk = disks_[did];
+    int siz = disk.capacity_;
+    int pos = disk.itr_;
+    return (dest - pos + siz) % siz; 
+  }
+
+  auto GetStress(int did, int dest) -> int {
+    return (ReadDist(did, dest) * 3) + scheduler_->GetRTQSize(did);
   }
 
 private:

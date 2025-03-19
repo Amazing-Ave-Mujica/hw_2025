@@ -18,10 +18,14 @@ add_custom_target(format
 add_custom_target(check-clang-tidy
         clang-tidy -p ${CMAKE_BINARY_DIR} -header-filter=. ../src/*.cpp
 )
-
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 add_custom_target(run
   python3 ../tools/run.py ../tools/interactor.exe ../data/sample_practice.in ./code_craft.exe
 )
+else()
+  add_custom_target(run
+    python3 ../tools/run.py ../tools/interactor ../data/sample_practice.in ./code_craft)
+endif()
 
 add_custom_target(debug
   python3 ../tools/run.py ../tools/interactor.exe ../data/sample_practice.in ./code_craft.exe -d

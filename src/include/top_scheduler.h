@@ -24,10 +24,17 @@ public:
     auto object = obj_pool_->GetObjAt(oid);
     scheduler_->NewTask(oid, std::make_unique<Task>(tid, oid, *time_));
 
-    int x = rand() % 3;
-    int dx = object->idisk_[x];
+    int x;
+    {
+      std::vector<int> v{0, 1, 2};
+      std::sort(v.begin(), v.end(), [&](int x, int y) {
+        return disk_mgr_->GetStress(object->idisk_[x], object->tdisk_[x][0]) < disk_mgr_->GetStress(object->idisk_[y], object->tdisk_[y][0]);
+      });
+      x = v[0];
+    }
+    int disk = object->idisk_[x];
     for (int i = 0; i < object->size_; i++) {
-      scheduler_->PushRTQ(dx, object->tdisk_[x][i]);
+      scheduler_->PushRTQ(disk, object->tdisk_[x][i]);
     }
   }
 

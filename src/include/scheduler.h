@@ -5,7 +5,7 @@
 #include "task.h"
 #include <list>
 #include <memory>
-#include <unordered_map>
+#include <set>
 #include <vector>
 
 #ifndef _TIMESLICE
@@ -18,43 +18,34 @@ class TaskManager;
 namespace printer {
 void AddDeleteObject(TaskManager &t);
 };
-// 存的是要到磁盘的第几个块读数据
+// 修改 RTQ 为平衡树
 struct RTQ {
 public:
   void Push(int x) {
-    if (ump_.count(x) != 0) {
-      return;
-    }
-    ump_[x] = q_.insert(q_.begin(), x);
+    st_.insert(x);
   }
 
   void Remove(int x) {
-    auto it = ump_.find(x);
-    if (it != ump_.end()) {
-      q_.erase(it->second);
-      ump_.erase(it);
-    }
+    st_.erase(x);
   }
 
-  auto Front() -> int {
-    if (q_.empty()) {
+  auto Front(int pos) -> int {
+    if (st_.empty()) {
       return -1;
     }
-    return q_.back();
+    auto it = st_.lower_bound(pos);
+    if (it == st_.end()) {
+      it = st_.begin();
+    }
+    return *it;
   }
 
-  void Query() {
-    std::cerr << "\n";
-    for (int x : q_) {
-      std::cerr << x << ' ';
-    }
-    std::cerr << '\n';
+  auto GetSize() -> int {
+    return st_.size();
   }
 
 private:
-  std::list<int> q_;
-  // delete task by value
-  std::unordered_map<int, std::list<int>::iterator> ump_;
+  std::set<int> st_;
 };
 
 // 每个 object 一个 TaskManager
@@ -132,9 +123,11 @@ public:
 
   void PushRTQ(int did, int blo) { q_[did].Push(blo); }
 
-  auto GetRT(int did) -> int { return q_[did].Front(); }
+  auto GetRT(int did, int pos) -> int { return q_[did].Front(pos); }
 
-  auto QueryRTQ(int did) { q_[did].Query(); }
+  auto GetRTQSize(int did) -> int {
+    return q_[did].GetSize();
+  }
 
   void Delete(int oid) {
     auto object = obj_pool_->GetObjAt(oid);
