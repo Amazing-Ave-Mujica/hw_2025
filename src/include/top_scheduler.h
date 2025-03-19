@@ -23,16 +23,11 @@ public:
     assert(obj_pool_->IsValid(oid));
     auto object = obj_pool_->GetObjAt(oid);
     scheduler_->NewTask(oid, std::make_unique<Task>(tid, oid, *time_));
-    // 简单挑选其中两个磁盘读
+
     int x = rand() % 3;
-    int y = rand() % 3;
     int dx = object->idisk_[x];
-    int dy = object->idisk_[y];
-    for (int i = 0; i < (object->size_ >> 1); i++) {
+    for (int i = 0; i < object->size_; i++) {
       scheduler_->PushRTQ(dx, object->tdisk_[x][i]);
-    }
-    for (int i = (object->size_ >> 1); i < object->size_; i++) {
-      scheduler_->PushRTQ(dy, object->tdisk_[y][i]);
     }
   }
 

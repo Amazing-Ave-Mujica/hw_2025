@@ -2,11 +2,11 @@
 
 #include "disk.h"
 #include "object.h"
-#include "printer.h"
 #include "scheduler.h"
 #include <algorithm>
 #include <random>
 #include <vector>
+#include "printer.h"
 
 #ifndef _TIMESLICE
 #define _TIMESLICE
@@ -71,8 +71,8 @@ public:
         }
         break;
       }
-      // disk.Pass(time);
-      // printer::ReadAddPass(did, 1);
+      //disk.Pass(time);
+      //printer::ReadAddPass(did, 1);
       assert(time == life_);
       disk.Jump(time, x);
       printer::ReadSetJump(did, x + 1);
