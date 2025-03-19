@@ -9,10 +9,12 @@
 struct Object {
   Object(int id, int tag, int size) : id_(id), tag_(tag), size_(size) {
     for (auto &i : tdisk_) {
-      i.resize(size_);
+      i.resize(size_, {});
     }
+    valid_ = true;
   }
 
+  bool valid_;
   int id_;
   int tag_;
   int size_;
@@ -35,6 +37,14 @@ public:
     }
     assert(oid >= 0 && oid < size_);
     return objs_[oid];
+  }
+
+  auto IsValid(int oid) -> bool {
+    return objs_[oid]->valid_;
+  }
+
+  void Drop(int oid) {
+    objs_[oid]->valid_ = false;
   }
 
 private:

@@ -9,8 +9,8 @@
 #include <iostream>
 
 auto main() -> int {
- // freopen(R"(D:\Documents\HW-2025\data\sample_practice.in)", "r", stdin);
-  //freopen("sbsb.txt", "w", stdout);
+ freopen(R"(D:\Documents\HW-2025\data\sample_practice.in)", "r", stdin);
+ freopen("sbsb.txt", "w", stdout);
 // #ifdef DEBUG
 //   freopen("./log", "w", stderr);
 // #endif
@@ -92,7 +92,6 @@ auto main() -> int {
       --object_id;
       tes.ReadRequest(request_id, object_id);
     }
-    printer::PrintRead(n);
   };
   for (timeslice = 1; timeslice <= t + 105; timeslice++) {
     sync();
@@ -100,5 +99,6 @@ auto main() -> int {
     write_op();
     read_op();
     tes.Read();
+    printer::PrintRead(n);
   }
 }

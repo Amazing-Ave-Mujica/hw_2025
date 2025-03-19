@@ -38,6 +38,15 @@ public:
     return q_.back();
   }
 
+  auto Query(int x) -> bool {
+    for (auto sb : q_) {
+      if (sb == x) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 private:
   std::list<int> q_;
   // delete task by value
@@ -79,6 +88,7 @@ public:
       l_[i].clear();
     }
   }
+
   friend void printer::AddDeleteObject(TaskManager& t);
 private:
   int mask_;
@@ -135,14 +145,17 @@ public:
 
   // 给 disk_mgr 调用的接口，当读了新的块的时候调用
   void Update(int oid, int y) {
-    if (oid < 0) {
-      int x = 2;
-    }
-    //assert(oid >= 0);
+    static int sb = 0;
+    // if (oid < 0) {
+    //   ++sb;
+    //   std::cerr << sb << '\n';
+    //   return;
+    // }
     auto object = obj_pool_->GetObjAt(oid);
     for (int i = 0; i < 3; i++) {
       int did = object->idisk_[i];
       q_[did].Remove(object->tdisk_[i][y]);
+      assert(q_[did].Query(object->tdisk_[i][y]) == false);
     }
     task_mgr_[oid].Update(y);
   }

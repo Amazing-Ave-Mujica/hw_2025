@@ -46,7 +46,8 @@ public:
     int time = life_;
     auto &disk = disks_[did];
     while (time > 0) {
-      auto x = scheduler_->GetRT(did);
+      const auto x = scheduler_->GetRT(did);
+      assert(disk.GetStorageAt(x).first != -233);
       if (x == -1) {
         break;
       }
@@ -54,8 +55,11 @@ public:
         if (disk.ReadCost() <= time) {
           disk.Read(time);
           printer::ReadAddRead(did, 1);
-          std::cerr << "dfkljasklfdsaklfsdalkfjsdalkfjlksda\n";
+          assert(x >= 0 && x < disk.capacity_);
           auto [oid, y] = disk.GetStorageAt(x);
+          if (oid < 0) {
+            std::cerr << oid << ' ' << y << '\n';
+          }
           scheduler_->Update(oid, y);
         }
         break;

@@ -9,7 +9,7 @@ class Disk {
 
 public:
   Disk(int disk_id, int V) : disk_id_(disk_id), capacity_(V) {
-    storage_.resize(capacity_);
+    storage_.resize(capacity_, {-10, -10});
     for (int i = 0; i < capacity_; i++) {
       free_block_.insert(i);
     }
@@ -32,7 +32,7 @@ public:
     if (free_block_.find(idx) != free_block_.end()) {
       return;
     }
-    storage_[idx] = {-1, -1};
+    storage_[idx] = {-233, -233};
     free_block_.insert(idx);
     ++free_size_;
   }
@@ -59,6 +59,7 @@ public:
   }
 
   void Pass(int &time) {
+    assert(false);
     --time;
     prev_is_rd_ = false;
     itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1;
@@ -66,7 +67,10 @@ public:
 
   auto GetItr() -> int { return itr_; }
 
-  auto GetStorageAt(int idx) -> std::pair<int, int> { return storage_[idx]; }
+  auto GetStorageAt(int idx) -> std::pair<int, int> { 
+    assert(idx >= 0 && idx < capacity_);
+    return storage_[idx]; 
+  }
 
 private:
   const int disk_id_;

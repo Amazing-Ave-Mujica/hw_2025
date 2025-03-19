@@ -16,6 +16,7 @@ public:
   // send to scheduler
   void ReadRequest(int tid, int oid) {
     assert(oid >= 0);
+    assert(obj_pool_->IsValid(oid));
     auto object = obj_pool_->GetObjAt(oid);
     scheduler_->NewTask(
         oid, std::make_unique<Task>(tid, oid, *time_));
@@ -37,7 +38,7 @@ public:
     assert(id == oid);
     scheduler_->NewTaskMgr(oid, size);
     for (int i = 0; i < 3; i++) {
-      disk_mgr_->Insert(oid, i);
+      assert(disk_mgr_->Insert(oid, i));
     }
     return oid;
   }
@@ -47,6 +48,7 @@ public:
   send to scheduler
   */
   void DeleteRequest(int oid) {
+    obj_pool_->Drop(oid);
     scheduler_->Delete(oid);
     auto object = obj_pool_->GetObjAt(oid);
     for (int i = 0; i < 3; i++) {
