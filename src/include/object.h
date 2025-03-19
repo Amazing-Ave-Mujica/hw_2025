@@ -30,6 +30,9 @@ public:
   }
 
   auto GetObjAt(int oid) -> std::shared_ptr<Object> {
+    if (oid < 0 || oid >= size_) {
+      int y = 1;
+    }
     assert(oid >= 0 && oid < size_);
     return objs_[oid];
   }

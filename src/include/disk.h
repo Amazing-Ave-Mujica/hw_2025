@@ -48,9 +48,11 @@ public:
     time -= (prev_rd_cost_ = ReadCost());
     prev_is_rd_ = true;
     itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1;
+    assert(itr_ >= 0 && itr_ < capacity_);
   }
 
   void Jump(int &time, int x) {
+    assert(x >= 0 && x < capacity_);
     prev_is_rd_ = false;
     time = 0;
     itr_ = x;

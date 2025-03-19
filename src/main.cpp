@@ -9,13 +9,14 @@
 #include <iostream>
 
 auto main() -> int {
+ // freopen(R"(D:\Documents\HW-2025\data\sample_practice.in)", "r", stdin);
+  //freopen("sbsb.txt", "w", stdout);
+// #ifdef DEBUG
+//   freopen("./log", "w", stderr);
+// #endif
 
-#ifdef DEBUG
-  freopen("./log", "w", stderr);
-#endif
-
-  std::ios::sync_with_stdio(false);
-  std::cin.tie(nullptr);
+  // std::ios::sync_with_stdio(false);
+  // std::cin.tie(nullptr);
   int t, m, n, v, g; // NOLINT
   std::cin >> t >> m >> n >> v >> g;
   for (int i = 0; i < m; i++) {
@@ -74,6 +75,7 @@ auto main() -> int {
       int size;
       int tag;
       std::cin >> id >> size >> tag;
+      --id;
       auto oid = tes.InsertRequest(id, size, tag);
       printer::AddInsertedObject(oid);
     }
@@ -87,9 +89,9 @@ auto main() -> int {
       int request_id;
       int object_id;
       std::cin >> request_id >> object_id;
-      tes.ReadRequest(request_id, object_id - 1);
+      --object_id;
+      tes.ReadRequest(request_id, object_id);
     }
-    tes.Read();
     printer::PrintRead(n);
   };
   for (timeslice = 1; timeslice <= t + 105; timeslice++) {
@@ -97,5 +99,6 @@ auto main() -> int {
     delete_op();
     write_op();
     read_op();
+    tes.Read();
   }
 }

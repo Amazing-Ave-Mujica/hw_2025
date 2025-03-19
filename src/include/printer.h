@@ -35,17 +35,18 @@ namespace printer {
   }
 
   void ReadAddPass(size_t DiskNum,int cnt) {
-    assert(false);
     for(int i = 0;i < cnt;i++){
       ops[DiskNum].push_back('p');
     } 
   }
   void ReadAddRead(size_t DiskNum,int cnt) {
     for(int i = 0;i < cnt;i++){
+      std::cerr << " dfsljflsf \n";
       ops[DiskNum].push_back('r');
     } 
   }
   void ReadSetJump(size_t DiskNum,size_t DiskBlockID){
+    std::cerr << "sb: " << ops[DiskNum] << '\n';
     ops[DiskNum] = "j " + std::to_string(DiskBlockID);
   }
 

@@ -20,6 +20,7 @@ public:
 
   // 插入 oid 的 kth 个副本
   auto Insert(int oid, int kth) -> bool {
+    assert(oid >= 0);
     auto object = obj_pool_->GetObjAt(oid);
     for (auto &disk : disks_) {
       if (disk.free_size_ >= object->size_) {
@@ -53,7 +54,7 @@ public:
         if (disk.ReadCost() <= time) {
           disk.Read(time);
           printer::ReadAddRead(did, 1);
-         // std::cerr << "dfkljasklfdsaklfsdalkfjsdalkfjlksda\n";
+          std::cerr << "dfkljasklfdsaklfsdalkfjsdalkfjlksda\n";
           auto [oid, y] = disk.GetStorageAt(x);
           scheduler_->Update(oid, y);
         }
@@ -63,7 +64,7 @@ public:
       //printer::ReadAddPass(did, 1);
       assert(time == life_);
       disk.Jump(time, x);
-      printer::ReadSetJump(did, x);
+      printer::ReadSetJump(did, x + 1);
     }
   }
 

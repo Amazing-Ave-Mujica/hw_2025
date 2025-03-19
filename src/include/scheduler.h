@@ -64,7 +64,7 @@ public:
 
   void Update(int x) {
     assert((1 << x) <= mask_);
-    for (int i = 0; i < mask_; i++) {
+    for (int i = 0; i <= mask_; i++) {
       if (((i >> x) & 1) == 0) {
         assert((i | (1 << x)) != i);
         l_[i | (1 << x)].splice(l_[i | (1 << x)].end(), l_[i]);
@@ -75,7 +75,7 @@ public:
   }
 
   void Clear() {
-    for (int i = 0; i < mask_; i++) {
+    for (int i = 0; i <= mask_; i++) {
       l_[i].clear();
     }
   }
@@ -119,6 +119,9 @@ public:
 
   void Delete(int oid) {
     assert(oid < task_mgr_.size());
+    if (oid < 0) {
+      int x = 2;
+    }
     auto object = obj_pool_->GetObjAt(oid);
     for (int i = 0; i < 3; i++) {
       int did = object->idisk_[i];
@@ -132,6 +135,10 @@ public:
 
   // 给 disk_mgr 调用的接口，当读了新的块的时候调用
   void Update(int oid, int y) {
+    if (oid < 0) {
+      int x = 2;
+    }
+    //assert(oid >= 0);
     auto object = obj_pool_->GetObjAt(oid);
     for (int i = 0; i < 3; i++) {
       int did = object->idisk_[i];

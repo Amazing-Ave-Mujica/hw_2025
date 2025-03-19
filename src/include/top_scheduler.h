@@ -15,6 +15,7 @@ public:
 
   // send to scheduler
   void ReadRequest(int tid, int oid) {
+    assert(oid >= 0);
     auto object = obj_pool_->GetObjAt(oid);
     scheduler_->NewTask(
         oid, std::make_unique<Task>(tid, oid, *time_));
@@ -33,6 +34,7 @@ public:
   // send to disk_mgr directly
   auto InsertRequest(int id, int size, int tag) -> int {
     int oid = obj_pool_->NewObject(id, tag, size);
+    assert(id == oid);
     scheduler_->NewTaskMgr(oid, size);
     for (int i = 0; i < 3; i++) {
       disk_mgr_->Insert(oid, i);
