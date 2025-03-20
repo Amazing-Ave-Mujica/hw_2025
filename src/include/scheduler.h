@@ -18,7 +18,14 @@ class TaskManager;
 namespace printer {
 void AddDeleteObject(TaskManager &t);
 };
-// 修改 RTQ 为平衡树
+
+/**
+1. 尽量一次读完某个 TAG
+2. 读某个 TAG 尽量让指针同方向移动
+3. 为读设置时间片 
+*/
+
+
 struct RTQ {
 public:
   void Push(int x) {
