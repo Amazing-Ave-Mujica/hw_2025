@@ -59,9 +59,9 @@ public:
     // 磁盘删除
     auto object = obj_pool_->GetObjAt(oid);
     for (int i = 0; i < 3; i++) {
-      int did = object->idisk_[i];
+      int disk_id = object->idisk_[i];
       for (auto y : object->tdisk_[i]) {
-        disk_mgr_->Delete(did, y);
+        disk_mgr_->Delete(disk_id, y);
       }
     }
 

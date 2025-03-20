@@ -121,20 +121,20 @@ public:
     task_mgr_[oid].NewTask(std::move(ptr));
   }
 
-  void PushRTQ(int did, int blo) { q_[did].Push(blo); }
+  void PushRTQ(int disk_id, int block_id) { q_[disk_id].Push(block_id); }
 
-  auto GetRT(int did, int pos) -> int { return q_[did].Front(pos); }
+  auto GetRT(int disk_id, int pos) -> int { return q_[disk_id].Front(pos); }
 
-  auto GetRTQSize(int did) -> int {
-    return q_[did].GetSize();
+  auto GetRTQSize(int disk_id) -> int {
+    return q_[disk_id].GetSize();
   }
 
   void Delete(int oid) {
     auto object = obj_pool_->GetObjAt(oid);
     for (int i = 0; i < 3; i++) {
-      int did = object->idisk_[i];
+      int disk_id = object->idisk_[i];
       for (auto y : object->tdisk_[i]) {
-        q_[did].Remove(y);
+        q_[disk_id].Remove(y);
       }
     }
     printer::AddDeleteObject(task_mgr_[oid]);
@@ -145,8 +145,8 @@ public:
   void Update(int oid, int y) {
     auto object = obj_pool_->GetObjAt(oid);
     for (int i = 0; i < 3; i++) {
-      int did = object->idisk_[i];
-      q_[did].Remove(object->tdisk_[i][y]);
+      int disk_id = object->idisk_[i];
+      q_[disk_id].Remove(object->tdisk_[i][y]);
     }
     task_mgr_[oid].Update(y);
   }

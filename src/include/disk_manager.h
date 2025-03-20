@@ -51,45 +51,55 @@ public:
     return false;
   }
 
-  void Delete(int did, int blo) { disks_[did].Delete(blo); }
+  void Delete(int disk_id, int block_id) { disks_[disk_id].Delete(block_id); }
 
-  void Read(int did) {
+  void Read(int disk_id) {
     int time = life_;
-    auto &disk = disks_[did];
+    auto &disk = disks_[disk_id];
     while (time > 0) {
-      const auto x = scheduler_->GetRT(did, disk.itr_);
+      const auto x = scheduler_->GetRT(disk_id, disk.itr_);
       if (x == -1) {
         break;
       }
       if (disk.itr_ == x) {
         if (disk.ReadCost() <= time) {
           disk.Read(time);
-          printer::ReadAddRead(did, 1);
+          printer::ReadAddRead(disk_id, 1);
           assert(x >= 0 && x < disk.capacity_);
           auto [oid, y] = disk.GetStorageAt(x);
           scheduler_->Update(oid, y);
         }
         break;
       }
-      if (ReadDist(did, x) >= life_) {
+      if (ReadDist(disk_id, x) >= life_) {
         disk.Jump(time, x);
-        printer::ReadSetJump(did, x + 1);
+        printer::ReadSetJump(disk_id, x + 1);
       } else {
-        disk.Pass(time);
-        printer::ReadAddPass(did, 1);
+        int rd_cost = disk.ReadCost();
+        if (time >= rd_cost && ReadDist(disk_id, x) <= 20 && rd_cost <= 25) {
+          auto [oid, y] = disk.GetStorageAt(disk.itr_);
+          disk.Read(time);
+          printer::ReadAddRead(disk_id, 1);
+          if (oid >= 0) {
+            scheduler_->Update(oid, y);
+          }
+        } else {
+          disk.Pass(time);
+          printer::ReadAddPass(disk_id, 1);
+        }
       }
     }
   }
 
-  auto ReadDist(int did, int dest) -> int {
-    auto &disk = disks_[did];
+  auto ReadDist(int disk_id, int dest) -> int {
+    auto &disk = disks_[disk_id];
     int siz = disk.capacity_;
     int pos = disk.itr_;
     return (dest - pos + siz) % siz; 
   }
 
-  auto GetStress(int did, int dest) -> int {
-    return (ReadDist(did, dest) * 3) + scheduler_->GetRTQSize(did);
+  auto GetStress(int disk_id, int dest) -> int {
+    return (ReadDist(disk_id, dest) * 3) + scheduler_->GetRTQSize(disk_id);
   }
 
 private:

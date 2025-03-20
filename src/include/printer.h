@@ -41,8 +41,8 @@ void ReadAddRead(size_t DiskNum, int cnt) {
     ops[DiskNum].push_back('r');
   }
 }
-void ReadSetJump(size_t DiskNum, size_t DiskBlockID) {
-  ops[DiskNum] = "j " + std::to_string(DiskBlockID);
+void ReadSetJump(size_t DiskNum, size_t Diskblock_idckID) {
+  ops[DiskNum] = "j " + std::to_string(Diskblock_idckID);
 }
 
 void AddInsertedObject(int ObjectID) { buf[WRITE][top[WRITE]++] = ObjectID; }
