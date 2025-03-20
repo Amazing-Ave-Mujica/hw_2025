@@ -68,10 +68,11 @@ public:
           assert(x >= 0 && x < disk.capacity_);
           auto [oid, y] = disk.GetStorageAt(x);
           scheduler_->Update(oid, y);
+          continue;
         }
         break;
       }
-      if (ReadDist(disk_id, x) >= life_) {
+      if (ReadDist(disk_id, x) >= life_ && time == life_) {
         disk.Jump(time, x);
         printer::ReadSetJump(disk_id, x + 1);
       } else {

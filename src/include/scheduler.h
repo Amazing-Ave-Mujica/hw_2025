@@ -20,12 +20,10 @@ void AddDeleteObject(TaskManager &t);
 };
 
 /**
-1. 尽量一次读完某个 TAG
+1. 尽量一次读完某个 TAG 
 2. 读某个 TAG 尽量让指针同方向移动
-3. 为读设置时间片 
+3. 设置时间片轮转机制防止饥饿
 */
-
-
 struct RTQ {
 public:
   void Push(int x) {
@@ -128,7 +126,7 @@ public:
     task_mgr_[oid].NewTask(std::move(ptr));
   }
 
-  void PushRTQ(int disk_id, int block_id) { q_[disk_id].Push(block_id); }
+  void PushRTQ(int disk_id, int block_idck_id) { q_[disk_id].Push(block_idck_id); }
 
   auto GetRT(int disk_id, int pos) -> int { return q_[disk_id].Front(pos); }
 

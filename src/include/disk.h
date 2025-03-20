@@ -16,29 +16,29 @@ public:
   Disk(int disk_id, int V) : disk_id_(disk_id), capacity_(V) {
     storage_.resize(capacity_);
     for (int i = 0; i < capacity_; i++) {
-      free_block_idck_.insert(i);
+      free_block_idck_idck_.insert(i);
     }
     prev_is_rd_ = false;
     free_size_ = capacity_;
   }
 
   auto Write(int oid, int y) -> int {
-    auto it = free_block_idck_.begin();
-    assert(it != free_block_idck_.end());
+    auto it = free_block_idck_idck_.begin();
+    assert(it != free_block_idck_idck_.end());
     int idx = *it;
     storage_[idx] = {oid, y};
-    free_block_idck_.erase(it);
+    free_block_idck_idck_.erase(it);
     --free_size_;
     return idx;
   }
 
   void Delete(int idx) {
     assert(idx >= 0 && idx < capacity_);
-    if (free_block_idck_.find(idx) != free_block_idck_.end()) {
+    if (free_block_idck_idck_.find(idx) != free_block_idck_idck_.end()) {
       return;
     }
     storage_[idx] = {-1, -1};
-    free_block_idck_.insert(idx);
+    free_block_idck_idck_.insert(idx);
     ++free_size_;
   }
 
@@ -86,7 +86,7 @@ private:
   bool prev_is_rd_;
 
   int free_size_;
-  std::set<int> free_block_idck_;
+  std::set<int> free_block_idck_idck_;
 
   std::vector<std::pair<int, int>> storage_;
 };
