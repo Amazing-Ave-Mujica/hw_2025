@@ -4,7 +4,9 @@
 #include "object.h"
 #include "printer.h"
 #include "scheduler.h"
+#include "segment.h"
 #include <algorithm>
+#include <cassert>
 #include <random>
 #include <vector>
 
@@ -15,8 +17,10 @@ extern int timeslice;
 
 class DiskManager {
 public:
-  DiskManager(ObjectPool *obj_pool, Scheduler *scheduler, int N, int V, int G)
-      : disk_cnt_(N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler) {
+  DiskManager(ObjectPool *obj_pool, Scheduler *scheduler,
+              SegmentManager *seg_mgr, int N, int V, int G)
+      : disk_cnt_(N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler),
+        seg_mgr_(seg_mgr) {
     disks_.reserve(disk_cnt_);
     for (int i = 0; i < disk_cnt_; i++) {
       disks_.emplace_back(i, V);
@@ -28,30 +32,71 @@ public:
   // 插入 oid 的 kth 个副本
   auto Insert(int oid, int kth) -> bool {
     auto object = obj_pool_->GetObjAt(oid);
+
     std::vector<int> sf(disks_.size());
     std::iota(sf.begin(), sf.end(), 0);
     std::mt19937 rng(time(nullptr));
     std::shuffle(sf.begin(), sf.end(), rng);
-    for (auto od : sf) {
-      auto &disk = disks_[od];
-      if (disk.free_size_ >= object->size_) {
+
+    auto write_by_block = [&]() {
+      for (auto od : sf) {
+        auto &disk = disks_[od];
+        if (disk.free_size_ >= object->size_) {
+          bool exist = false;
+          for (int i = 0; i < kth; i++) {
+            exist |= (object->idisk_[i] == disk.disk_id_);
+          }
+          if (!exist) {
+            object->idisk_[kth] = disk.disk_id_;
+            for (int j = 0; j < object->size_; j++) {
+              object->tdisk_[kth][j] = disk.Write(oid, j);
+            }
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    auto write_by_segment = [&]() {
+      int tag = object->tag_;
+      for (auto od : sf) {
+        auto &disk = disks_[od];
+        auto ptr = seg_mgr_->Find(tag, od, object->size_);
+        if (ptr == nullptr) {
+          // 扩展 或 跳过
+          assert(false);
+        }
         bool exist = false;
         for (int i = 0; i < kth; i++) {
           exist |= (object->idisk_[i] == disk.disk_id_);
         }
-        if (!exist) {
-          object->idisk_[kth] = disk.disk_id_;
-          for (int j = 0; j < object->size_; j++) {
-            object->tdisk_[kth][j] = disk.Write(oid, j);
-          }
-          return true;
+        if (exist) {
+          continue;
         }
+        object->idisk_[kth] = od;
+        for (int j = 0; j < object->size_; j++) {
+          object->tdisk_[kth][j] = disk.WriteBlock(ptr->disk_addr_ ,oid, j);
+        }
+        ptr->Write(object->size_);
+        return true;
       }
+      return false;
+    };
+
+    if (write_by_segment()) {
+      return true;
+    }
+    if (write_by_block()) {
+      return true;
     }
     return false;
   }
 
-  void Delete(int disk_id, int block_id) { disks_[disk_id].Delete(block_id); }
+  void Delete(int tag, int did, int blo) { 
+    
+    disks_[did].Delete(blo); 
+  }
 
   void Read(int disk_id) {
     int time = life_;
@@ -96,7 +141,7 @@ public:
     auto &disk = disks_[disk_id];
     int siz = disk.capacity_;
     int pos = disk.itr_;
-    return (dest - pos + siz) % siz; 
+    return (dest - pos + siz) % siz;
   }
 
   auto GetStress(int disk_id, int dest) -> int {
@@ -108,5 +153,6 @@ private:
   const int life_;
   ObjectPool *obj_pool_;
   Scheduler *scheduler_;
+  SegmentManager *seg_mgr_;
   std::vector<Disk> disks_;
 };

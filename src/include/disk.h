@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 #include <set>
 #include <vector>
 
@@ -11,10 +12,11 @@ extern int timeslice;
 
 class Disk {
   friend class DiskManager;
+  friend class Segment;
 
 public:
-  Disk(int disk_id, int V) : disk_id_(disk_id), capacity_(V) {
-    storage_.resize(capacity_);
+  static constexpr std::pair<int,int> EMPTY_BLOCK = {-1,-1};
+  Disk(int disk_id, int V) : disk_id_(disk_id), capacity_(V),storage_(V,{-1,-1}) {
     for (int i = 0; i < capacity_; i++) {
       free_block_idck_idck_.insert(i);
     }
@@ -24,6 +26,16 @@ public:
 
   auto Write(int oid, int y) -> int {
     auto it = free_block_idck_idck_.begin();
+    assert(it != free_block_idck_idck_.end());
+    int idx = *it;
+    storage_[idx] = {oid, y};
+    free_block_idck_idck_.erase(it);
+    --free_size_;
+    return idx;
+  }
+
+  auto WriteBlock(int bid, int oid, int y) -> int {
+    auto it = free_block_idck_idck_.lower_bound(bid);
     assert(it != free_block_idck_idck_.end());
     int idx = *it;
     storage_[idx] = {oid, y};
@@ -74,6 +86,19 @@ public:
   auto GetStorageAt(int idx) -> std::pair<int, int> {
     assert(idx >= 0 && idx < capacity_);
     return storage_[idx];
+  }
+
+  auto GetMaxLen(int tag, int idx = 0,int len = INT32_MAX){
+    len = std::min(len,capacity_ - idx);
+    int res = 0;
+    for(int i = idx,cnt = 0;i < len;i++){
+      cnt = (storage_[idx] == EMPTY_BLOCK) ? cnt + 1 : 0;
+      res = std::max(res,cnt);
+      if (cnt == 0){
+        break;
+      }
+    }
+    return res;
   }
 
 private:

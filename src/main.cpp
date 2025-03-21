@@ -40,7 +40,8 @@ auto main() -> int {
 
   ObjectPool pool(t);
   Scheduler none(&pool, n, t);
-  DiskManager dm(&pool, &none, n, v, g);
+  SegmentManager seg_mgr(m,n,v,write_data);
+  DiskManager dm(&pool, &none,&seg_mgr, n, v, g);
   TopScheduler tes(&timeslice, &none, &pool, &dm);
 
   auto sync = []() {
