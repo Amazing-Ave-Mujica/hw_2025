@@ -54,6 +54,7 @@ public:
     ++free_size_;
   }
 
+  // 64 51.2 40.9 32.7 26.2 20.9 16.7 13.4 10.7
   auto ReadCost() -> int {
     if (prev_is_rd_) {
       return std::max(16, (prev_rd_cost_ + 1) * 4 / 5);

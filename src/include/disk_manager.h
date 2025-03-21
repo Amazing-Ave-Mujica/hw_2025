@@ -130,7 +130,7 @@ public:
         printer::ReadSetJump(disk_id, x + 1);
       } else {
         int rd_cost = disk.ReadCost();
-        if (time >= rd_cost && ReadDist(disk_id, x) <= 20 && rd_cost <= 25) {
+        if (time >= rd_cost && ReadDist(disk_id, x) <= 12 && rd_cost <= 17) {
           auto [oid, y] = disk.GetStorageAt(disk.itr_);
           disk.Read(time);
           printer::ReadAddRead(disk_id, 1);
@@ -153,7 +153,7 @@ public:
   }
 
   auto GetStress(int disk_id, int dest) -> int {
-    return (ReadDist(disk_id, dest) * 3) + scheduler_->GetRTQSize(disk_id);
+    return ReadDist(disk_id, dest);
   }
 
 private:
