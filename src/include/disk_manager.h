@@ -51,9 +51,9 @@ public:
             for (int j = 0; j < object->size_; j++) {
               auto block_id = disk.Write(oid, j);
               object->tdisk_[kth][j] = block_id;
-              for(int i = 0,len = seg_mgr_->segs_.size();i < len;i++){
-                auto ptr = seg_mgr_->FindBlock(i, od,block_id);
-                if (ptr != nullptr){
+              for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
+                auto ptr = seg_mgr_->FindBlock(i, od, block_id);
+                if (ptr != nullptr) {
                   ptr->Write(1);
                 }
               }
@@ -84,7 +84,7 @@ public:
         }
         object->idisk_[kth] = od;
         for (int j = 0; j < object->size_; j++) {
-          object->tdisk_[kth][j] = disk.WriteBlock(ptr->disk_addr_ ,oid, j);
+          object->tdisk_[kth][j] = disk.WriteBlock(ptr->disk_addr_, oid, j);
         }
         ptr->Write(object->size_);
         return true;
@@ -101,9 +101,9 @@ public:
     return false;
   }
 
-  void Delete(int tag, int disk_id, int block_id) { 
+  void Delete(int tag, int disk_id, int block_id) {
     seg_mgr_->Delete(tag, disk_id, block_id);
-    disks_[disk_id].Delete(block_id); 
+    disks_[disk_id].Delete(block_id);
   }
 
   void Read(int disk_id) {

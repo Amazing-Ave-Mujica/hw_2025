@@ -20,19 +20,15 @@ void AddDeleteObject(TaskManager &t);
 };
 
 /**
-1. 尽量一次读完某个 TAG 
+1. 尽量一次读完某个 TAG
 2. 读某个 TAG 尽量让指针同方向移动
 3. 设置时间片轮转机制防止饥饿
 */
 struct RTQ {
 public:
-  void Push(int x) {
-    st_.insert(x);
-  }
+  void Push(int x) { st_.insert(x); }
 
-  void Remove(int x) {
-    st_.erase(x);
-  }
+  void Remove(int x) { st_.erase(x); }
 
   auto Front(int pos) -> int {
     if (st_.empty()) {
@@ -45,9 +41,7 @@ public:
     return *it;
   }
 
-  auto GetSize() -> int {
-    return st_.size();
-  }
+  auto GetSize() -> int { return st_.size(); }
 
 private:
   std::set<int> st_;
@@ -126,13 +120,13 @@ public:
     task_mgr_[oid].NewTask(std::move(ptr));
   }
 
-  void PushRTQ(int disk_id, int block_idck_id) { q_[disk_id].Push(block_idck_id); }
+  void PushRTQ(int disk_id, int block_idck_id) {
+    q_[disk_id].Push(block_idck_id);
+  }
 
   auto GetRT(int disk_id, int pos) -> int { return q_[disk_id].Front(pos); }
 
-  auto GetRTQSize(int disk_id) -> int {
-    return q_[disk_id].GetSize();
-  }
+  auto GetRTQSize(int disk_id) -> int { return q_[disk_id].GetSize(); }
 
   void Delete(int oid) {
     auto object = obj_pool_->GetObjAt(oid);

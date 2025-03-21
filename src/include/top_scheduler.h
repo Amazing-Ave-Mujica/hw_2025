@@ -16,7 +16,7 @@ public:
   TopScheduler(int *time, Scheduler *scheduler, ObjectPool *obj_pool,
                DiskManager *disk_mgr)
       : time_(time), scheduler_(scheduler), obj_pool_(obj_pool),
-        disk_mgr_(disk_mgr) {};
+        disk_mgr_(disk_mgr){};
 
   void ReadRequest(int tid, int oid) {
     assert(oid >= 0);
@@ -28,7 +28,8 @@ public:
     {
       std::vector<int> v{0, 1, 2};
       std::sort(v.begin(), v.end(), [&](int x, int y) {
-        return disk_mgr_->GetStress(object->idisk_[x], object->tdisk_[x][0]) < disk_mgr_->GetStress(object->idisk_[y], object->tdisk_[y][0]);
+        return disk_mgr_->GetStress(object->idisk_[x], object->tdisk_[x][0]) <
+               disk_mgr_->GetStress(object->idisk_[y], object->tdisk_[y][0]);
       });
       x = v[0];
     }

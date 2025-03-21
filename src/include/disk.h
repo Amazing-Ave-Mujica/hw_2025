@@ -15,8 +15,9 @@ class Disk {
   friend class Segment;
 
 public:
-  static constexpr std::pair<int,int> EMPTY_BLOCK = {-1,-1};
-  Disk(int disk_id, int V) : disk_id_(disk_id), capacity_(V),storage_(V,{-1,-1}) {
+  static constexpr std::pair<int, int> EMPTY_BLOCK = {-1, -1};
+  Disk(int disk_id, int V)
+      : disk_id_(disk_id), capacity_(V), storage_(V, {-1, -1}) {
     for (int i = 0; i < capacity_; i++) {
       free_block_idck_idck_.insert(i);
     }
@@ -89,13 +90,13 @@ public:
     return storage_[idx];
   }
 
-  auto GetMaxLen(int tag, int idx = 0,int len = INT32_MAX){
-    len = std::min(len,capacity_ - idx);
+  auto GetMaxLen(int tag, int idx = 0, int len = INT32_MAX) {
+    len = std::min(len, capacity_ - idx);
     int res = 0;
-    for(int i = idx,cnt = 0;i < len;i++){
+    for (int i = idx, cnt = 0; i < len; i++) {
       cnt = (storage_[idx] == EMPTY_BLOCK) ? cnt + 1 : 0;
-      res = std::max(res,cnt);
-      if (cnt == 0){
+      res = std::max(res, cnt);
+      if (cnt == 0) {
         break;
       }
     }
