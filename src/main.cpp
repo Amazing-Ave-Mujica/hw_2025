@@ -32,7 +32,7 @@ auto main() -> int {
       m, std::vector<int>(((t - 1) / TIME_SLICE_DIVISOR) + 1, 0));
   std::vector<std::vector<double>> alpha(
       m, std::vector<double>(m, 0.0)); // 资源混合惩罚系数
-  std::vector<double> beta(m, 0.3);    // 超参数
+  std::vector<double> beta(m, 1);    // 超参数*1
   std::vector<int> max_allocate(m, 0), resource(m, 0); // NOLINT
 
   // 输入数据并初始化 timeslice_data
@@ -66,7 +66,8 @@ auto main() -> int {
     if (i < m - 1) {
       resource[i] = static_cast<int>(
           1.0 * max_allocate[i] * (n * v) /
-          std::accumulate(max_allocate.begin(), max_allocate.end(), 0));
+          std::accumulate(max_allocate.begin(), max_allocate.end(), 0));//调参*2
+      // resource[i]=n*v/m;
     } else {
       resource[i] =
           n * v - std::accumulate(resource.begin(), resource.end(), 0);
@@ -88,16 +89,15 @@ auto main() -> int {
   }
 
   (std::cout << "OK\n").flush();
-
-  ResourceAllocator ra(m, n, v, n * v / m, resource, alpha, beta);
-  ra.SimulatedAnnealing(1000, 0.99, 10000); // 超参数
+  // std::cerr<<v/m<<'\n';
+  ResourceAllocator ra(m, n, v,  v / m, resource, alpha, beta);//调参*3
+  ra.SimulatedAnnealing(2000000000, 0.9995,100000000);//调参*4
   auto best_solution = ra.GetBestSolution();
   ObjectPool pool(t);
   Scheduler none(&pool, n, t);
   SegmentManager seg_mgr(m, n, v, best_solution);
   DiskManager dm(&pool, &none, &seg_mgr, n, v, g);
   TopScheduler tes(&timeslice, &none, &pool, &dm);
-
   auto sync = []() -> bool {
     std::string ts;
     int time;

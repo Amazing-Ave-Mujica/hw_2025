@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <cmath>
 #include <ctime>
 #include <iostream>
@@ -37,28 +38,42 @@ private:
       // 计算超额惩罚项
       for (int i = 0; i < m_; ++i) {
         int s_ij = std::max(0, x[i][j] - l_);
-        penalty += beta_[i] * s_ij;
+        penalty += beta_[i] * s_ij*s_ij;
       }
     }
     return penalty;
   }
 
   // **初始化可行解**
-  auto InitializeSolution() const -> std::vector<std::vector<int>> {
+  auto InitializeSolution() -> std::vector<std::vector<int>> {
     std::vector<std::vector<int>> x(m_, std::vector<int>(n_, 0));
     std::vector<int> remaining = r_;
 
-    // **贪心分配**
-    for (int j = 0; j < n_; ++j) {
-      int total = 0;
-      for (int i = 0; i < m_; ++i) {
-        if (total < v_) {
-          x[i][j] = std::min(remaining[i], v_ - total);
-          remaining[i] -= x[i][j];
-          total += x[i][j];
+    // **随机打乱资源索引，提高公平性**
+    std::vector<int> resource_indices(m_);
+    for (int i = 0; i < m_; ++i) {
+      resource_indices[i] = i;
+    }
+    std::shuffle(resource_indices.begin(), resource_indices.end(), rng_);
+
+    // **轮盘式分配，尽量均匀**
+    for (int i : resource_indices) {
+      int allocated = 0; // 记录已分配的资源量
+      while (remaining[i] > 0) {
+        bool assigned = false;
+        for (int j = 0; j < n_ && remaining[i] > 0; ++j) {
+          if (allocated < v_) {
+            int allocate_amount = std::min(remaining[i], 1);
+            x[i][j] += allocate_amount;
+            remaining[i] -= allocate_amount;
+            allocated += allocate_amount;
+            assigned = true;
+          }
         }
+        if (!assigned) {break;} // 如果无法继续分配，则停止
       }
     }
+
     return x;
   }
 
@@ -118,7 +133,7 @@ public:
       T *= coolingRate;
 
       // **终止条件**
-      if (T < 1e-4) {
+      if (T < 1e-12) {
         break;
       }
     }
@@ -126,15 +141,15 @@ public:
 
   // **获取最优解**
   auto GetBestSolution() const -> std::vector<std::vector<int>> {
-    // std::cerr << "Minimum penalty: " << best_penalty_ << '\n';
-    // std::cerr << "Optimal allocation:\n";
-    // for (int i = 0; i < m_; ++i) {
-    //     std::cerr << "Resource " << i + 1 << ": ";
-    //     for (int j = 0; j < n_; ++j) {
-    //         std::cerr << best_x_[i][j] << " ";
-    //     }
-    //     std::cerr << '\n';
-    // }
+    std::cerr << "Minimum penalty: " << best_penalty_ << '\n';
+    std::cerr << "Optimal allocation:\n";
+    for (int i = 0; i < m_; ++i) {
+        std::cerr << "Resource " << i + 1 << ": ";
+        for (int j = 0; j < n_; ++j) {
+            std::cerr << best_x_[i][j] << " ";
+        }
+        std::cerr << '\n';
+    }
     return best_x_;
   }
 };
