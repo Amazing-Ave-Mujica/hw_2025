@@ -42,3 +42,7 @@ class segment
     int disk_id_,disk_addr,capacity_{5},size_{0};
 }
 ```
+
+##
+resource_allocator.h
+利用模拟退火优化磁盘分配，可返回一个n*m的矩阵，表示第i个磁盘上tag为j的块大小，保证每一行和为V。
