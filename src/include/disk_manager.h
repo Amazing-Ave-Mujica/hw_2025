@@ -35,7 +35,7 @@ public:
 
     std::vector<int> sf(disks_.size());
     std::iota(sf.begin(), sf.end(), 0);
-    std::mt19937 rng(time(nullptr));
+    std::mt19937 rng(0);
     std::shuffle(sf.begin(), sf.end(), rng);
 
     auto write_by_block = [&]() {
@@ -49,7 +49,14 @@ public:
           if (!exist) {
             object->idisk_[kth] = disk.disk_id_;
             for (int j = 0; j < object->size_; j++) {
-              object->tdisk_[kth][j] = disk.Write(oid, j);
+              auto block_id = disk.Write(oid, j);
+              object->tdisk_[kth][j] = block_id;
+              for(int i = 0,len = seg_mgr_->segs_.size();i < len;i++){
+                auto ptr = seg_mgr_->FindBlock(i, od,block_id);
+                if (ptr != nullptr){
+                  ptr->Write(1);
+                }
+              }
             }
             return true;
           }
@@ -65,7 +72,8 @@ public:
         auto ptr = seg_mgr_->Find(tag, od, object->size_);
         if (ptr == nullptr) {
           // 扩展 或 跳过
-          assert(false);
+          // assert(false);
+          continue;
         }
         bool exist = false;
         for (int i = 0; i < kth; i++) {
@@ -93,9 +101,9 @@ public:
     return false;
   }
 
-  void Delete(int tag, int did, int blo) { 
-    
-    disks_[did].Delete(blo); 
+  void Delete(int tag, int disk_id, int block_id) { 
+    seg_mgr_->Delete(tag, disk_id, block_id);
+    disks_[disk_id].Delete(block_id); 
   }
 
   void Read(int disk_id) {

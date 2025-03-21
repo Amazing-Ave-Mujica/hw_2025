@@ -73,6 +73,7 @@ auto main() -> int {
       int tag;
       std::cin >> id >> size >> tag;
       --id;
+      --tag;
       auto oid = tes.InsertRequest(id, size, tag);
       printer::AddInsertedObject(oid);
     }

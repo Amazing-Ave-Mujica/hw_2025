@@ -36,7 +36,7 @@ public:
       int addr = 0;
       int rem = V;
       for(int j = 0;j < M;j++){
-        int64_t capacity = std::min (static_cast<int>((1LL * V  * weights[i] + sum - 1) / sum),rem); 
+        int64_t capacity = std::min (static_cast<int>((1LL * V  * weights[j] + sum - 1) / sum),rem); 
         segs_[j].emplace_back(i,addr,j,capacity);
         addr += capacity;
         rem -= capacity;
@@ -54,7 +54,27 @@ public:
     }
     return nullptr;
   }
+  auto FindBlock(int tag,int disk_id,int block_id) -> Segment* {
+    for(auto& s : segs_[tag]){
+      if (s.disk_id_ != disk_id){
+        continue;
+      }
+      if (s.disk_addr_ <= block_id && block_id < s.disk_addr_ + s.capacity_){
+        return &s;
+      }
+    }
+    return nullptr;
+  }
   auto Delete(int tag,int disk_id,int block_id){
-    
+    for(auto& s : segs_[tag]){
+      if (s.disk_id_ != disk_id){
+        continue;
+      }
+      if (s.disk_addr_ <= block_id && block_id <= s.disk_addr_ + s.capacity_){
+        s.Delete(1);
+        return true;
+      }
+    }
+    return false;
   }
 };
