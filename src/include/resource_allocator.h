@@ -2,6 +2,7 @@
 #include "config.h"
 #include "resource_allocator.h"
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <ctime>
 #include <iostream>
@@ -204,6 +205,7 @@ constexpr int K_POP_SIZE = config::K_POP_SIZE;       // 种群大小
 constexpr int K_MAX_GEN = config::K_MAX_GEN;        // 最大迭代次数
 constexpr db K_CROSS_RATE = config::K_CROSS_RATE; // 交叉概率
 constexpr db K_MUTATE_RATE = config::K_MUTATE_RATE; // 变异概率
+constexpr int ELITE_NUM=config::ELITE_NUM;//精英个体数量
 
 struct Individual {
   std::vector<std::vector<int>> allocation_; // 资源分配方案 (m × n 矩阵)
@@ -212,10 +214,10 @@ struct Individual {
 
 class GeneticOptimizer {
 private:
-  int m_, n_, v_, l_;
-  db beta_,gama_;
+  const int m_, n_, v_, l_;
+  const db beta_,gama_;
   std::vector<int> r_;
-  std::vector<std::vector<db>> alpha_;
+  const std::vector<std::vector<db>> alpha_;
   std::vector<Individual> population_;
   // 随机数生成器
   std::mt19937 rng_;
@@ -246,7 +248,8 @@ private:
       for(int j=0;j<m_;j++){
         count_in_disk+=x[j][i];
       }
-      penalty+=gama_*(count_in_disk-v_)*(count_in_disk-v_);
+      int excess = std::max(0, count_in_disk - v_);
+      penalty+=gama_*excess*excess;
     }
     //正则项，保证每种资源的分配均匀
     for(int j=0;j<m_;j++){
@@ -254,7 +257,8 @@ private:
       for(int i=0;i<n_;i++){
         count_in_resource+=x[j][i];
       }
-      penalty+=gama_*(count_in_resource-r_[j])*(count_in_resource-r_[j]);
+      int excess = std::max(0, count_in_resource - r_[j]);
+      penalty+=gama_*excess*excess;
     }
     return penalty;
   }
@@ -301,18 +305,41 @@ private:
     }
     return best;
   }
+  // 选择操作（轮盘赌选择）
+  auto RouletteWheelSelection() -> Individual {
+    // 计算总适应度的倒数（适应度越小越好）
+    db total_fitness = 0.0;
+    for (const auto &indiv : population_) {
+        total_fitness += 1.0 / indiv.fitness_; // 使用适应度的倒数作为概率权重
+    }
 
-  // 交叉操作（单点交叉）
+    // 生成一个 [0, total_fitness] 范围内的随机数
+    std::uniform_real_distribution<db> dist(0.0, total_fitness);
+    db rand_value = dist(rng_);
+
+    // 遍历种群，找到对应的个体
+    db cumulative_fitness = 0.0;
+    for (const auto &indiv : population_) {
+        cumulative_fitness += 1.0 / indiv.fitness_;
+        if (cumulative_fitness >= rand_value) {
+            return indiv; // 返回被选中的个体
+        }
+    }
+
+    // 如果没有找到（理论上不会发生），返回最后一个个体
+    return population_.back();
+  }
+  // 交叉操作
   auto Crossover(const Individual &parent1, const Individual &parent2) -> Individual {
-    std::uniform_int_distribution<int> dist(0, m_ - 1);
-    std::uniform_int_distribution<int>dist_cross(0,100);
+    std::uniform_real_distribution<db>dist(0.0,1.0);
     Individual offspring = parent1;
 
-    if (static_cast<db>(dist_cross(rng_)) / 100 <  K_CROSS_RATE) {
-      int crossover_point = dist(rng_);
-
-      for (int i = crossover_point; i < m_; ++i) {
-        offspring.allocation_[i] = parent2.allocation_[i];
+    for(int i=0;i<m_;i++){
+      for(int j=0;j<n_;j++){
+        db crossover_point = dist(rng_);
+        if(crossover_point<=K_CROSS_RATE){
+          offspring.allocation_[i][j]=parent2.allocation_[i][j];
+        }
       }
     }
 
@@ -324,9 +351,9 @@ private:
   auto Mutate(Individual &indiv) -> void {
     std::uniform_int_distribution<int> dist_m(0, m_ - 1);
     std::uniform_int_distribution<int> dist_n(0, n_ - 1);
-    std::uniform_int_distribution<int>dist_mutate(0,100);
+    std::uniform_real_distribution<db>dist_mutate(0.0,1.0);
 
-    if (static_cast<db>(dist_mutate(rng_)) / 100 < K_MUTATE_RATE) {
+    if (dist_mutate(rng_) < K_MUTATE_RATE) {
       int i = dist_m(rng_);
       int j = dist_n(rng_);
 
@@ -361,35 +388,48 @@ private:
   }
 public:
   GeneticOptimizer(int m, int n, int v, int l, std::vector<int> r,
-                   std::vector<std::vector<db>> alpha, db beta=config::BETA_VALUE,db gama=config::GAMA_VALUE)
+                   std::vector<std::vector<db>> alpha, db beta=config::BETA_VALUE,db gama=config::GAMA_VALUE,
+                   int seed = config::RANDOM_SEED)
       : m_(m), n_(n), v_(v), l_(l), r_(std::move(r)), alpha_(std::move(alpha)),
-        beta_(beta),gama_(gama),rng_(config::RANDOM_SEED) {}
+        beta_(beta),gama_(gama),rng_(seed) {}
 
-  auto Solve(bool cerr=false) -> void {
+  auto Solve(bool cerr = false) -> void {
     InitializePopulation();
-
+    assert(ELITE_NUM<K_POP_SIZE);
     for (int gen = 0; gen < K_MAX_GEN; ++gen) {
       std::vector<Individual> new_population;
 
-      // 选择 + 交叉 + 变异
-      for (int i = 0; i < K_POP_SIZE; ++i) {
-        Individual parent1 = TournamentSelection();
-        Individual parent2 = TournamentSelection();
+      // **精英主义：保留当前种群中适应度最高的三个个体**
+      std::sort(population_.begin(), population_.end(),
+                [](const Individual &a, const Individual &b) {
+                  return a.fitness_ < b.fitness_; // 按适应度升序排序
+                });
+      new_population.reserve(K_POP_SIZE);
+      for (int i = 0; i < ELITE_NUM; ++i) {
+        new_population.push_back(population_[i]); // 保留前三个个体
+      }
+  
+      // **选择 + 交叉 + 变异**
+      for (int i = ELITE_NUM; i < K_POP_SIZE; ++i) { // 从第4个位置开始填充新种群
+        Individual parent1=RouletteWheelSelection();
+        Individual parent2=RouletteWheelSelection();
         Individual offspring = Crossover(parent1, parent2);
         Mutate(offspring);
         new_population.push_back(offspring);
       }
 
-      // 更新种群
+      // **更新种群**
       population_ = std::move(new_population);
 
-      // 输出当前最优解
+      // **输出当前最优解**
       if (gen % 100 == 0) {
         db best_fitness = population_[0].fitness_;
         for (const auto &indiv : population_) {
           best_fitness = std::min(best_fitness, indiv.fitness_);
         }
-        if(cerr){std::cerr << "Generation " << gen << " Best Fitness: " << best_fitness << '\n';}
+        if (cerr) {
+          std::cerr << "Generation " << gen << " Best Fitness: " << best_fitness << '\n';
+        }
       }
     }
   }
@@ -418,5 +458,7 @@ public:
 using ResourceAllocator=AnnealOptimizer;
 // using ResourceAllocator=GeneticOptimizer;
 /*
-baseline:AnnealOptimizer Minimum penalty: 1.55361e+08
+baseline:AnnealOptimizer 
+gama=10 Minimum penalty: 1.55361e+08
+gama=1 Minimum penalty: 1.50868e+08
 */

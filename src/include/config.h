@@ -11,13 +11,14 @@ namespace config{
     static constexpr db COOLING_RATE=0.999;//模拟退火降温速率
     static constexpr int MAX_ITER=20000;//模拟退火最大迭代次数
     static constexpr db BETA_VALUE=1;//模拟退火、遗传算法超参数
-    static constexpr db GAMA_VALUE=10;//遗传算法超参数，正则项系数
+    static constexpr db GAMA_VALUE=1;//遗传算法超参数，正则项系数
 
     static constexpr int SEGMENT_DEFAULT_CAPACITY=10;//段默认容量
     static constexpr int PRINTER_BUF_CAPACITY=(1<<20);//打印缓冲区容量
 
     static constexpr int K_POP_SIZE = 200;       // 种群大小
     static constexpr int K_MAX_GEN = 500;        // 最大迭代次数
-    static constexpr db K_CROSS_RATE = 0.8; // 交叉概率
+    static constexpr db K_CROSS_RATE = 0.5; // 交叉概率
     static constexpr db K_MUTATE_RATE = 0.05; // 变异概率
+    static constexpr int ELITE_NUM=10;//精英个体数量
 }  // namespace config
