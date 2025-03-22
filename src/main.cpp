@@ -33,7 +33,7 @@ auto main() -> int {
       m, std::vector<int>(((t - 1) / TIME_SLICE_DIVISOR) + 1, 0)); // 时间片数据
   std::vector<std::vector<double>> alpha(
       m, std::vector<double>(m, 0.0)); // 资源混合惩罚系数
-  std::vector<double> beta(m, 1);    // 超参数*1
+  std::vector<double> beta(m, config::BETA_VALUE);    // 超参数*1
   std::vector<int> max_allocate(m, 0), resource(m, 0); // NOLINT
 
   // 输入数据并初始化 timeslice_data

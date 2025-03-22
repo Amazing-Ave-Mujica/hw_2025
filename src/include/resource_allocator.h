@@ -140,20 +140,18 @@ public:
     }
     /*调整最后的资源*/
     for(int i=0;i<n_;i++){
-      int delta=0;
+      int delta=-v_;
       for(int j=0;j<m_;j++){
-        delta+=x[j][i];
+        delta+=best_x_[j][i];
       }
-      delta-=v_;
-      if(delta==0) {continue;}
       while(delta!=0){
         int j=dist_m(rng_);
         if(delta>0){
-          int d=std::min(delta,x[j][i]);
-          x[j][i]-=d;
+          int d=std::min(delta,best_x_[j][i]);
+          best_x_[j][i]-=d;
           delta-=d;
         }else{
-          x[j][i]-=delta;
+          best_x_[j][i]-=delta;
           delta=0;
         }
       }
