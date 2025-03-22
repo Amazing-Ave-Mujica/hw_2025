@@ -128,27 +128,54 @@ public:
           best_x_ = x;
         }
       }
-
       // **温度衰减**
       T *= coolingRate;
-
+      
       // **终止条件**
-      if (T < 1e-12) {
+      if (T < 1e-4) {
+        std::cerr<<"epoch="<<iter<<'\n';
         break;
       }
     }
+    /*调整最后的资源*/
+    for(int i=0;i<n_;i++){
+      int delta=0;
+      for(int j=0;j<m_;j++){
+        delta+=x[j][i];
+      }
+      delta-=v_;
+      if(delta==0) {continue;}
+      while(delta!=0){
+        int j=dist_m(rng_);
+        if(delta>0){
+          int d=std::min(delta,x[j][i]);
+          x[j][i]-=d;
+          delta-=d;
+        }else{
+          x[j][i]-=delta;
+          delta=0;
+        }
+      }
+    }
+    // for(int i=0;i<n_;i++){
+    //   int delta=0;
+    //   for(int j=0;j<m_;j++){
+    //     delta+=x[j][i];
+    //   }
+    //   std::cerr<<delta<<'\n';
+    // }
   }
-
+  
   // **获取最优解**
   auto GetBestSolution() const -> std::vector<std::vector<int>> {
     std::cerr << "Minimum penalty: " << best_penalty_ << '\n';
     std::cerr << "Optimal allocation:\n";
     for (int i = 0; i < m_; ++i) {
-        std::cerr << "Resource " << i + 1 << ": ";
-        for (int j = 0; j < n_; ++j) {
-            std::cerr << best_x_[i][j] << " ";
-        }
-        std::cerr << '\n';
+      std::cerr << "Resource " << i + 1 << ": ";
+      for (int j = 0; j < n_; ++j) {
+        std::cerr << best_x_[i][j] << " ";
+      }
+      std::cerr << '\n';
     }
     return best_x_;
   }

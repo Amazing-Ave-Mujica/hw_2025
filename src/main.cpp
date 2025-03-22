@@ -77,11 +77,13 @@ auto main() -> int {
   // 计算 alpha 矩阵
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < m; j++) {
-      int sum = 0;
+      int sumi = 0,sumj=0;//NOLINT
       for (int k = 0; k < (t - 1) / TIME_SLICE_DIVISOR + 1; k++) {
         alpha[i][j] += std::min(timeslice_data[i][k], timeslice_data[j][k]);
-        sum += std::max(timeslice_data[i][k], timeslice_data[j][k]);
+        sumi+=timeslice_data[i][k];
+        sumj+=timeslice_data[j][k];
       }
+      int sum=std::min(sumi,sumj);
       if (sum > 0) { // 避免除以零
         alpha[i][j] /= sum;
       }
@@ -89,9 +91,9 @@ auto main() -> int {
   }
 
   (std::cout << "OK\n").flush();
-  // std::cerr<<v/m<<'\n';
-  ResourceAllocator ra(m, n, v,  v / m, resource, alpha, beta);//调参*3
-  ra.SimulatedAnnealing(2000000000, 0.9995,100000000);//调参*4
+  // std::cerr<<v<<'\n';
+  ResourceAllocator ra(m, n, v,  v/m, resource, alpha, beta);//调参*3
+  ra.SimulatedAnnealing(20000, 0.999,20000);//调参*4
   auto best_solution = ra.GetBestSolution();
   ObjectPool pool(t);
   Scheduler none(&pool, n, t);
