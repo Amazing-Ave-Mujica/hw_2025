@@ -1,3 +1,4 @@
+#include "config.h"
 #include "data.h"
 #include <algorithm>
 #include <cstdint>
@@ -6,7 +7,7 @@
 
 class Segment {
 public:
-  static constexpr int DEFAULT_CAPACITY = 10; // 默认段容量
+  static constexpr int DEFAULT_CAPACITY = config::SEGMENT_DEFAULT_CAPACITY; // 默认段容量
 
   int disk_id_;    // 段所在的磁盘 ID
   int disk_addr_;  // 段的起始地址（块编号）

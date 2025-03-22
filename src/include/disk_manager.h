@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config.h"
 #include "disk.h"
 #include "object.h"
 #include "printer.h"
@@ -49,7 +50,7 @@ public:
     // 随机打乱磁盘顺序
     std::vector<int> sf(disks_.size());
     std::iota(sf.begin(), sf.end(), 0);
-    std::mt19937 rng(0);
+    std::mt19937 rng(config::RANDOM_SEED);
     std::shuffle(sf.begin(), sf.end(), rng);
 
     // 按块写入数据

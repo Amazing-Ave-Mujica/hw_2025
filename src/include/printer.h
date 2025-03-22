@@ -1,3 +1,4 @@
+#include "config.h"
 #include <cstdio>
 #ifndef _PRINTER_H
 #define _PRINTER_H
@@ -15,9 +16,9 @@ extern int timeslice; // 全局变量，表示时间片
 namespace printer {
 
 // 缓冲区，用于存储不同类型的请求
-int buf[3][1 << 20]; // 三种请求类型的缓冲区，每种类型最多存储 2^20 个请求
+int buf[3][config::PRINTER_BUF_CAPACITY]; // 三种请求类型的缓冲区，每种类型最多存储 2^20 个请求
 int top[3] = {0};    // 每种请求缓冲区的当前大小
-std::string ops[10]; // 每个磁盘的操作记录（最多支持 10 个磁盘）
+std::string ops[config::MAX_N]; // 每个磁盘的操作记录（最多支持 10 个磁盘）
 
 // 请求类型的枚举
 // DELETE: 删除请求

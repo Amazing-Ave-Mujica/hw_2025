@@ -1,4 +1,5 @@
 #pragma once
+#include "config.h"
 #include <algorithm>
 #include <cmath>
 #include <ctime>
@@ -84,7 +85,7 @@ public:
                     const std::vector<double> &beta)
       : m_(m), n_(n), v_(v), l_(l), r_(r), alpha_(alpha), beta_(beta),
         best_penalty_(std::numeric_limits<double>::max()),
-        rng_(std::random_device{}()) {}
+        rng_(config::RANDOM_SEED) {}
 
   // **执行模拟退火优化**
   auto SimulatedAnnealing(double T, double coolingRate, int maxIter) -> void {

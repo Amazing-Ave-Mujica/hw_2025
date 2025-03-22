@@ -13,7 +13,7 @@
 #include <limits>
 #include <numeric>
 
-constexpr int TIME_SLICE_DIVISOR = 1800; // 常量替代魔法数字
+constexpr int TIME_SLICE_DIVISOR = config::TIME_SLICE_DIVISOR; // 常量替代魔法数字
 
 int timeslice = 0;
 
@@ -95,8 +95,8 @@ auto main() -> int {
   (std::cout << "OK\n").flush(); // 输出初始化完成信息
 
   // 初始化资源分配器并进行模拟退火优化
-  ResourceAllocator ra(m, n, v, v / m, resource, alpha, beta); // 调参*3
-  ra.SimulatedAnnealing(20000, 0.999, 20000); // 调参*4
+  ResourceAllocator ra(m, n, v, v/m, resource, alpha, beta); // 调参*3
+  ra.SimulatedAnnealing(config::T, config::COOLING_RATE, config::MAX_ITER); // 调参*4
   auto best_solution = ra.GetBestSolution(); // 获取最优解
 
   // 初始化对象池、调度器、段管理器和磁盘管理器
