@@ -31,9 +31,9 @@ auto main() -> int {
 
   std::vector<std::vector<int>> timeslice_data(
       m, std::vector<int>(((t - 1) / TIME_SLICE_DIVISOR) + 1, 0)); // 时间片数据
-  std::vector<std::vector<double>> alpha(
-      m, std::vector<double>(m, 0.0)); // 资源混合惩罚系数
-  std::vector<double> beta(m, config::BETA_VALUE);    // 超参数*1
+  std::vector<std::vector<db>> alpha(
+      m, std::vector<db>(m, 0.0)); // 资源混合惩罚系数
+  db beta=config::BETA_VALUE;    // 超参数*1
   std::vector<int> max_allocate(m, 0), resource(m, 0); // NOLINT
 
   // 输入数据并初始化 timeslice_data
@@ -95,9 +95,9 @@ auto main() -> int {
   (std::cout << "OK\n").flush(); // 输出初始化完成信息
 
   // 初始化资源分配器并进行模拟退火优化
-  ResourceAllocator ra(m, n, v, v/m, resource, alpha, beta); // 调参*3
-  ra.SimulatedAnnealing(config::T, config::COOLING_RATE, config::MAX_ITER); // 调参*4
-  auto best_solution = ra.GetBestSolution(); // 获取最优解
+  ResourceAllocator ra(m, n, v, v/m, resource, alpha); // 调参*3
+  ra.Solve(true); // 调参*4
+  auto best_solution = ra.GetBestSolution(true); // 获取最优解
 
   // 初始化对象池、调度器、段管理器和磁盘管理器
   ObjectPool pool(t);
