@@ -18,8 +18,8 @@ constexpr int TIME_SLICE_DIVISOR = config::TIME_SLICE_DIVISOR; // 常量替代�
 int timeslice = 0;
 
 auto main() -> int {
-  freopen("/home/fiatiustitia/HW-2025/data/sample_practice.in", "r", stdin);
-  freopen("result.txt", "w", stdout);
+  // freopen("/home/fiatiustitia/HW-2025/data/sample_practice.in", "r", stdin);
+  // freopen("result.txt", "w", stdout);
   std::ios::sync_with_stdio(false);
   std::cin.tie(nullptr);
 
@@ -83,9 +83,9 @@ auto main() -> int {
     for (int j = 0; j < m; j++) {
       int sumi = 0, sumj = 0; // NOLINT
       for (int k = 0; k < (t - 1) / TIME_SLICE_DIVISOR + 1; k++) {
-        alpha[i][j] += std::min(timeslice_data[i][k], timeslice_data[j][k]); // 计算混合惩罚项
-        sumi += timeslice_data[i][k];
-        sumj += timeslice_data[j][k];
+        alpha[i][j] += std::min(read_data[i][k], read_data[j][k]); // 计算混合惩罚项
+        sumi += read_data[i][k];
+        sumj += read_data[j][k];
       }
       int sum = std::min(sumi, sumj);
       if (sum > 0) { // 避免除以零
@@ -98,8 +98,8 @@ auto main() -> int {
 
   // 初始化资源分配器并进行模拟退火优化
   ResourceAllocator ra(m, n, v, v/m, resource, alpha); // 调参*3
-  ra.Solve(true); // 调参*4
-  auto best_solution = ra.GetBestSolution(true); // 获取最优解
+  ra.Solve(ISCERR); // 调参*4
+  auto best_solution = ra.GetBestSolution(ISCERR); // 获取最优解
 
   // 初始化对象池、调度器、段管理器和磁盘管理器
   ObjectPool pool(t);
