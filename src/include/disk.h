@@ -71,11 +71,17 @@ public:
   }
 
   // 执行读取操作
-  void Read(int &time) {
-    time -= (prev_rd_cost_ = ReadCost()); // 减去读取成本
-    prev_is_rd_ = true; // 设置为读取状态
-    itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1; // 更新迭代器位置
-    assert(itr_ >= 0 && itr_ < capacity_); // 确保迭代器位置合法
+  void Read(int &time, int k = 1) {
+    while (k-- > 0) {
+      time -= (prev_rd_cost_ = ReadCost()); // 减去读取成本
+      prev_is_rd_ = true; // 设置为读取状态
+      itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1; // 更新迭代器位置
+      assert(itr_ >= 0 && itr_ < capacity_); // 确保迭代器位置合法
+      if (time < 0) {
+        int x;
+      }
+      assert(time >= 0);
+    }
   }
 
   // 跳转到指定块
@@ -87,10 +93,13 @@ public:
   }
 
   // 跳过当前块
-  void Pass(int &time) {
-    --time; // 减少时间
-    prev_is_rd_ = false; // 设置为非读取状态
-    itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1; // 更新迭代器位置
+  void Pass(int &time, int k = 1) {
+    while (k-- > 0) {
+      --time; // 减少时间
+      prev_is_rd_ = false; // 设置为非读取状态
+      itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1; // 更新迭代器位置
+      assert(time >= 0);
+    }
   }
 
   // 获取当前迭代器位置
