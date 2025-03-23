@@ -104,6 +104,8 @@ public:
 
   // 获取当前迭代器位置
   auto GetItr() -> int { return itr_; }
+  //获取当前迭代器的前一个位置
+  auto GetIterPre() -> int { return (itr_ - 1 + capacity_) % capacity_; }
 
   // 获取指定索引的存储块内容
   auto GetStorageAt(int idx) -> std::pair<int, int> {

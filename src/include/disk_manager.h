@@ -131,9 +131,7 @@ public:
   // 从指定磁盘读取数据
   // 参数：
   // - disk_id: 磁盘 ID
-  void Read(int disk_id) {
-    #ifdef SINGLE_READ_MODE
-    int time = life_; // 初始化读取时间
+  void ReadSingle(int disk_id,int time){
     auto &disk = disks_[disk_id];
     while (time > 0) {
       const auto x = scheduler_->GetRT(disk_id, disk.itr_); // 获取调度器推荐的读取位置
@@ -169,8 +167,8 @@ public:
         }
       }
     }
-    #else
-
+  }
+  void Read(int disk_id) {
     int time = life_; // 初始化读取时间
     auto &disk = disks_[disk_id];
 
@@ -245,7 +243,7 @@ public:
     }
 
     // 在队列头添加一个伪任务
-    task_k.insert(task_k.begin(), disk.GetItr());
+    task_k.insert(task_k.begin(), disk.GetIterPre());//@ttao: 这里是不是应该是 disk.GetItr() -1
     dp[0][val_id] = 0;
   }
 
@@ -327,7 +325,7 @@ public:
     // 就算走不到下一个目标，也可以选择继续移动「方案选单」
     // @ todo
 
-    #endif
+    ReadSingle(disk_id,time);
   }
 
   // 计算从当前位置到目标位置的距离

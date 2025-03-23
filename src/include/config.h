@@ -1,4 +1,5 @@
 #pragma once
+#pragma optimize(2)
 using db=long double;
 #define ISCERR false
 namespace config{
