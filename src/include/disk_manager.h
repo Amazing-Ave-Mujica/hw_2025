@@ -177,6 +177,10 @@ public:
   }
   void Read(int disk_id) {
     int time = life_; // 初始化读取时间
+
+    #ifdef SINGLE_READ_MODE
+    ReadSingle(disk_id,time);
+    #else
     auto &disk = disks_[disk_id];
 
     // 读取最近的 k 个任务，按距离升序存储
@@ -333,6 +337,7 @@ public:
     // @ todo
 
     ReadSingle(disk_id,time);
+    #endif
   }
 
   // 计算从当前位置到目标位置的距离

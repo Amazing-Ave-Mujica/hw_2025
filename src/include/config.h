@@ -1,7 +1,7 @@
 #pragma once
 #pragma optimize(2)
 using db=long double;
-#define ISCERR true
+#define ISCERR false
 namespace config{
 
     //#define LLDB
@@ -28,5 +28,5 @@ namespace config{
     static constexpr db K_MUTATE_RATE = 0.05; // 变异概率
     static constexpr int ELITE_NUM=10;//精英个体数量
 
-    static constexpr int DISK_READ_FETCH_LEN = 30; // 不可能读得比这个还多
+    static constexpr int DISK_READ_FETCH_LEN = 9; // 规划最近的读取任务个数
 }  // namespace config

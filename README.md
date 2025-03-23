@@ -14,7 +14,9 @@
 
 - [ ] TopScheduler 安排同 TAG 在同一硬盘读
 
-- [ ] 分析数据，比如读的时候同 TAG 的 object id 与读取请求时间的关系 
+- [x] 分析数据，比如读的时候同 TAG 的 object id 与读取请求时间的关系 
+
+- [x] DP 决定磁头移动方案
 
 ![](img/photo_2025-03-17_20-09-13.jpg)
 
