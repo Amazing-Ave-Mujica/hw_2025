@@ -10,7 +10,7 @@ namespace config{
     static constexpr db EPS_T=1e-4;//模拟退火终止温度
     static constexpr db COOLING_RATE=0.999;//模拟退火降温速率
     static constexpr int MAX_ITER=20000;//模拟退火最大迭代次数
-    static constexpr db BETA_VALUE=1;//模拟退火、遗传算法超参数
+    static constexpr db BETA_VALUE=0;//模拟退火、遗传算法超参数
     static constexpr db GAMA_VALUE=1;//遗传算法超参数，正则项系数
 
     static constexpr int SEGMENT_DEFAULT_CAPACITY=10;//段默认容量

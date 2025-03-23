@@ -18,6 +18,8 @@ constexpr int TIME_SLICE_DIVISOR = config::TIME_SLICE_DIVISOR; // 常量替代�
 int timeslice = 0;
 
 auto main() -> int {
+  freopen("/home/fiatiustitia/HW-2025/data/sample_practice.in", "r", stdin);
+  freopen("result.txt", "w", stdout);
   std::ios::sync_with_stdio(false);
   std::cin.tie(nullptr);
 
