@@ -238,7 +238,7 @@ private:
     // 超额部分惩罚
     for (int j = 0; j < n_; ++j) {
       for (int i = 0; i < m_; ++i) {
-        int excess = std::max(0, x[i][j] - l_);
+        int excess = x[i][j] - l_;
         penalty += beta_ * excess*excess;
       }
     }
@@ -248,16 +248,16 @@ private:
       for(int j=0;j<m_;j++){
         count_in_disk+=x[j][i];
       }
-      int excess = std::max(0, count_in_disk - v_);
+      int excess = count_in_disk - v_;
       penalty+=gama_*excess*excess;
     }
     //正则项，保证每种资源的分配均匀
-    for(int j=0;j<m_;j++){
+    for(int i=0;i<m_;i++){
       int count_in_resource=0;
-      for(int i=0;i<n_;i++){
-        count_in_resource+=x[j][i];
+      for(int j=0;j<n_;j++){
+        count_in_resource+=x[i][j];
       }
-      int excess = std::max(0, count_in_resource - r_[j]);
+      int excess = count_in_resource - r_[i];
       penalty+=gama_*excess*excess;
     }
     return penalty;
@@ -288,6 +288,7 @@ private:
       }
 
       indiv.fitness_ = ComputePenalty(indiv.allocation_);
+      AdjustSolution(indiv.allocation_);
       population_.push_back(indiv);
     }
   }
@@ -334,11 +335,11 @@ private:
     std::uniform_real_distribution<db>dist(0.0,1.0);
     Individual offspring = parent1;
 
-    for(int i=0;i<m_;i++){
-      for(int j=0;j<n_;j++){
-        db crossover_point = dist(rng_);
-        if(crossover_point<=K_CROSS_RATE){
-          offspring.allocation_[i][j]=parent2.allocation_[i][j];
+    for(int i=0;i<n_;i++){
+      db crossover_point = dist(rng_);
+      if(crossover_point<K_CROSS_RATE){
+        for(int j=0;j<m_;j++){
+          offspring.allocation_[j][i]=parent2.allocation_[j][i];
         }
       }
     }
@@ -355,12 +356,16 @@ private:
 
     if (dist_mutate(rng_) < K_MUTATE_RATE) {
       int i = dist_m(rng_);
-      int j = dist_n(rng_);
+      int j1 = dist_n(rng_);
+      int j2 = dist_n(rng_);
+      while(j1==j2){
+        j2=dist_n(rng_);
+      }
 
-      std::uniform_int_distribution<int> dist_v(-v_/2, v_/2);
+      std::uniform_int_distribution<int> dist_v(0,indiv.allocation_[i][j2]);
       int delta = dist_v(rng_);
-      int new_value = std::max(0, indiv.allocation_[i][j] + delta);
-      indiv.allocation_[i][j] = std::min(new_value, v_);
+      indiv.allocation_[i][j1] += delta;
+      indiv.allocation_[i][j2] -= delta; 
     }
 
     indiv.fitness_ = ComputePenalty(indiv.allocation_);
@@ -443,22 +448,30 @@ public:
     }
     AdjustSolution(best.allocation_);
     if(iscerr){
+      std::vector<int>c(n_,0);;
       std::cerr << "Optimal Solution (Penalty: " << best.fitness_ << "):\n";
       for (int i = 0; i < m_; ++i) {
         std::cerr << "Resource " << i + 1 << ": ";
         for (int j = 0; j < n_; ++j) {
           std::cerr << best.allocation_[i][j] << " ";
+          c[j]+=best.allocation_[i][j];
         }
         std::cerr << '\n';
       }
+      for(int i=0;i<n_;i++){
+        std::cerr<<c[i]<<' ';
+      }
+      std::cerr<<'\n';
     }
     return best.allocation_;
   }
 };
-using ResourceAllocator=AnnealOptimizer;
-// using ResourceAllocator=GeneticOptimizer;
+// using ResourceAllocator=AnnealOptimizer;
+using ResourceAllocator=GeneticOptimizer;
 /*
 baseline:AnnealOptimizer 
 gama=10 Minimum penalty: 1.55361e+08
 gama=1 Minimum penalty: 1.50868e+08
+
+2.28e8
 */
