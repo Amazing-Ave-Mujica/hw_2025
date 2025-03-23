@@ -6,14 +6,14 @@
 #include "include/printer.h"
 #include "include/scheduler.h"
 #include "include/top_scheduler.h"
-#include "resource_allocator.h"
+#include "include/resource_allocator.h"
+#include "include/tsp.h"
+#include "include/init.h"
 #include <algorithm>
 #include <cstdio>
 #include <iostream>
 #include <limits>
 #include <numeric>
-
-constexpr int TIME_SLICE_DIVISOR = config::TIME_SLICE_DIVISOR; // 常量替代魔法数字
 
 int timeslice = 0;
 
@@ -35,24 +35,15 @@ auto main() -> int {
   Data write_data(m, ((t - 1) / TIME_SLICE_DIVISOR) + 1);  // 写入数据
   Data read_data(m, ((t - 1) / TIME_SLICE_DIVISOR) + 1);   // 读取数据
 
-  std::vector<std::vector<int>> timeslice_data(
-      m, std::vector<int>(((t - 1) / TIME_SLICE_DIVISOR) + 1, 0)); // 时间片数据
-  std::vector<std::vector<db>> alpha(
-      m, std::vector<db>(m, 0.0)); // 资源混合惩罚系数
-  db beta=config::BETA_VALUE;    // 超参数*1
-  std::vector<int> max_allocate(m, 0), resource(m, 0); // NOLINT
-
-  // 输入数据并初始化 timeslice_data
+  // 输入数据
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < (t - 1) / TIME_SLICE_DIVISOR + 1; j++) {
       std::cin >> delete_data[i][j];
-      timeslice_data[i][j] -= delete_data[i][j]; // 减去删除数据
     }
   }
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < (t - 1) / TIME_SLICE_DIVISOR + 1; j++) {
       std::cin >> write_data[i][j];
-      timeslice_data[i][j] += write_data[i][j]; // 加上写入数据
     }
   }
   for (int i = 0; i < m; i++) {
@@ -60,55 +51,15 @@ auto main() -> int {
       std::cin >> read_data[i][j]; // 读取数据
     }
   }
-
-  // 计算 timeslice_data 的累积和和 max_allocate
-  for (int i = 0; i < m; i++) {
-    for (int j = 1; j < (t - 1) / TIME_SLICE_DIVISOR + 1; j++) {
-      timeslice_data[i][j] += timeslice_data[i][j - 1]; // 累积和
-    }
-    max_allocate[i] =
-        *std::max_element(timeslice_data[i].begin(), timeslice_data[i].end()); // 最大分配值
-  }
-
-  // 计算资源分配
-  for (int i = 0; i < m; i++) {
-    if (i < m - 1) {
-      resource[i] = static_cast<int>(
-          1.0 * max_allocate[i] * (n * v) /
-          std::accumulate(max_allocate.begin(), max_allocate.end(), 0)); // 按比例分配资源
-    } else {
-      resource[i] =
-          n * v - std::accumulate(resource.begin(), resource.end(), 0); // 剩余资源分配给最后一个标签
-    }
-  }
-
-  // 计算 alpha 矩阵
-  for (int i = 0; i < m; i++) {
-    for (int j = 0; j < m; j++) {
-      int sumi = 0, sumj = 0; // NOLINT
-      for (int k = 0; k < (t - 1) / TIME_SLICE_DIVISOR + 1; k++) {
-        alpha[i][j] += std::min(read_data[i][k], read_data[j][k]); // 计算混合惩罚项
-        sumi += read_data[i][k];
-        sumj += read_data[j][k];
-      }
-      int sum = std::min(sumi, sumj);
-      if (sum > 0) { // 避免除以零
-        alpha[i][j] /= sum;
-      }
-    }
-  }
-
-  (std::cout << "OK\n").flush(); // 输出初始化完成信息
-
   // 初始化资源分配器并进行模拟退火优化
-  ResourceAllocator ra(m, n, v, v/m, resource, alpha); // 调参*3
-  ra.Solve(ISCERR); // 调参*4
-  auto best_solution = ra.GetBestSolution(ISCERR); // 获取最优解
-
+  auto [best_solution,alpha] = 
+    InitResourceAllocator(t, m, n, v, g,delete_data,write_data,read_data); // 获取最优解
+  auto tsp=InitTSP(n,m,alpha,best_solution); // 初始化 TSP 问题
+  
   // 初始化对象池、调度器、段管理器和磁盘管理器
   ObjectPool pool(t);
   Scheduler none(&pool, n, t);
-  SegmentManager seg_mgr(m, n, v, best_solution);
+  SegmentManager seg_mgr(m, n, v, best_solution,tsp);
   DiskManager dm(&pool, &none, &seg_mgr, n, v, g);
   TopScheduler tes(&timeslice, &none, &pool, &dm);
 
@@ -161,6 +112,7 @@ auto main() -> int {
     }
   };
 
+  (std::cout << "OK\n").flush(); // 输出初始化完成信息
   // 主循环，处理每个时间片
   for (timeslice = 1; timeslice <= t + 105; timeslice++) {
     sync();       // 同步时间片

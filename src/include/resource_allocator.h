@@ -143,7 +143,9 @@ public:
       
       // **终止条件**
       if (T < config::EPS_T) {
-        if(iscerr){std::cerr<<"epoch="<<iter<<'\n';}
+        #ifdef ISCERR
+        {std::cerr<<"epoch="<<iter<<'\n';}
+        #endif
         break;
       }
     }
@@ -153,7 +155,7 @@ public:
   
   // **获取最优解**
   auto GetBestSolution(bool iscerr=false) const -> std::vector<std::vector<int>> {
-    if(iscerr){
+    #ifdef ISCERR
       std::vector<int>c(n_,0),r(m_,0);//NOLINT
       std::cerr << "Minimum penalty: " << best_penalty_ << '\n';
       std::cerr << "Optimal allocation:\n";
@@ -174,7 +176,7 @@ public:
         }
         std::cerr<<'\n';
       }
-    }
+    #endif
     return best_x_;
   }
 };
@@ -415,9 +417,9 @@ public:
         for (const auto &indiv : population_) {
           best_fitness = std::min(best_fitness, indiv.fitness_);
         }
-        if (cerr) {
+        #ifdef ISCERR
           std::cerr << "Generation " << gen << " Best Fitness: " << best_fitness << '\n';
-        }
+        #endif
       }
     }
   }
@@ -430,7 +432,7 @@ public:
       }
     }
     // AdjustSolution(best.allocation_);
-    if(iscerr){
+    #ifdef ISCERR
       std::vector<int>c(n_,0);;
       std::cerr << "Optimal Solution (Penalty: " << best.fitness_ << "):\n";
       for (int i = 0; i < m_; ++i) {
@@ -445,7 +447,7 @@ public:
         std::cerr<<c[i]<<' ';
       }
       std::cerr<<'\n';
-    }
+    #endif
     return best.allocation_;
   }
 };

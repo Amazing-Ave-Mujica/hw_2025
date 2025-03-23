@@ -1,8 +1,9 @@
 #include "config.h"
 #include "data.h"
+#include "tsp.h"
 #include <algorithm>
 #include <cassert>
-#include <cstdint>
+#include <cstdint> 
 #include <list>
 #include <vector>
 
@@ -58,11 +59,12 @@ public:
   // - N: 磁盘数量
   // - V: 每个磁盘的容量
   // - t: 每个标签在每个磁盘上的初始分配
-  SegmentManager(int M, int N, int V, const data_t &t) : segs_(M) {
+  SegmentManager(int M, int N, int V, const data_t &t,const std::vector<std::vector<int>>&tsp) : segs_(M) {
     for (int i = 0; i < N; i++) {          // 遍历每个磁盘
       int addr = 0;                        // 当前磁盘的起始地址
       int rem = V;                         // 当前磁盘的剩余容量
-      for (int j = 0; j < M; j++) {        // 遍历每个标签
+      for (int _ = 0; _ < M; _++) {        // 遍历每个标签
+        int j=tsp[i][_];
         auto cur = std::min(t[j][i], rem); // 当前标签在该磁盘上的分配
         segs_[j].emplace_back(i, addr, j,
                               cur); // 创建段并添加到对应标签的段列表

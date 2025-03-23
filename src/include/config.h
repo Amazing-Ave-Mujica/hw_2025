@@ -1,7 +1,7 @@
 #pragma once
 #pragma optimize(2)
 using db=long double;
-#define ISCERR false
+#define ISCERR 
 namespace config{
 
     //#define LLDB
@@ -29,4 +29,6 @@ namespace config{
     static constexpr int ELITE_NUM=10;//精英个体数量
 
     static constexpr int DISK_READ_FETCH_LEN = 9; // 规划最近的读取任务个数
+
+    static constexpr db INF=1e18;//无穷大
 }  // namespace config
