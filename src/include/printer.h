@@ -68,7 +68,7 @@ void ReadAddRead(size_t DiskNum, int cnt) {
 // - DiskNum: 磁盘编号
 // - DiskblockID: 跳转的块编号
 void ReadSetJump(size_t DiskNum, size_t DiskblockID) {
-  ops[DiskNum] = "j " + std::to_string(DiskblockID); // 添加跳转操作
+  ops[DiskNum] = "j " + std::to_string(DiskblockID + 1); // 添加跳转操作
 }
 
 // 添加写入对象到缓冲区

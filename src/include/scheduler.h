@@ -47,6 +47,25 @@ public:
     return *it;
   }
 
+  auto FrontK(int pos, int k) -> std::vector<int> {
+    if (st_.empty()) {
+      return {};
+    }
+    auto it = st_.lower_bound(pos); // 找到第一个大于等于 pos 的块
+    std::vector<int> res;
+    res.reserve(k);
+    for (; it != st_.end() && k > 0; ++it) {
+      res.push_back(*it);
+      --k;
+    }
+    // 再从头开始找，因为磁盘是布局一个环
+    for (it = st_.begin(); it != st_.end() && *it < pos && k > 0; ++it) {
+      res.push_back(*it);
+      --k;
+    }
+    return res;
+  }
+
   // 获取队列的大小
   auto GetSize() -> int { return st_.size(); }
 
@@ -167,6 +186,11 @@ public:
   // 返回值：下一个读取块的 ID
   auto GetRT(int disk_id, int pos) -> int { return q_[disk_id].Front(pos); }
 
+  // 一次获取 k 个读任务
+  auto GetRTK(int disk_id, int pos, int k) -> std::vector<int> {
+    return q_[disk_id].FrontK(pos, k);
+  }
+
   // 获取指定磁盘的读取队列大小
   // 参数：
   // - disk_id: 磁盘 ID
@@ -193,6 +217,9 @@ public:
   // - oid: 对象 ID
   // - y: 已完成的块编号
   void Update(int oid, int y) {
+    if (oid < 0) {
+      return;
+    }
     auto object = obj_pool_->GetObjAt(oid); // 获取对象
     for (int i = 0; i < 3; i++) {
       int disk_id = object->idisk_[i];
@@ -201,6 +228,8 @@ public:
     task_mgr_[oid].Update(y); // 更新任务状态
   }
 
+  // 获取磁盘读任务的分布，用于读调度器使用
+  
 private:
   /*
     需要一个数据结构来给每个磁盘单独维护读队列

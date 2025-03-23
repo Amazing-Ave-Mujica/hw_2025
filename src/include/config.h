@@ -1,6 +1,10 @@
 #pragma once
 using db=long double;
 namespace config{
+
+    //#define LLDB
+    //#define SINGLE_READ_MODE
+
     static constexpr int RANDOM_SEED=0;//随机数种子
     static constexpr int MAX_M=16;//资源种类数
     static constexpr int MAX_N=10;//容器数量
@@ -21,4 +25,6 @@ namespace config{
     static constexpr db K_CROSS_RATE = 0.5; // 交叉概率
     static constexpr db K_MUTATE_RATE = 0.05; // 变异概率
     static constexpr int ELITE_NUM=10;//精英个体数量
+
+    static constexpr int DISK_READ_FETCH_LEN = 30; // 不可能读得比这个还多
 }  // namespace config
