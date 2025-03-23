@@ -18,17 +18,12 @@ constexpr int TIME_SLICE_DIVISOR = config::TIME_SLICE_DIVISOR; // 常量替代�
 int timeslice = 0;
 
 auto main() -> int {
-<<<<<<< HEAD
 
   #ifdef LLDB
     freopen(R"(D:\Documents\hw_2025\data\sample.in)", "r", stdin);
     freopen(R"(D:\Documents\hw_2025\log.txt)", "w", stdout);
   #endif
 
-=======
-  // freopen("/home/fiatiustitia/HW-2025/data/sample_practice.in", "r", stdin);
-  // freopen("result.txt", "w", stdout);
->>>>>>> main
   std::ios::sync_with_stdio(false);
   std::cin.tie(nullptr);
 
@@ -107,13 +102,8 @@ auto main() -> int {
 
   // 初始化资源分配器并进行模拟退火优化
   ResourceAllocator ra(m, n, v, v/m, resource, alpha); // 调参*3
-<<<<<<< HEAD
-  ra.Solve(false); // 调参*4
-  auto best_solution = ra.GetBestSolution(false); // 获取最优解
-=======
   ra.Solve(ISCERR); // 调参*4
   auto best_solution = ra.GetBestSolution(ISCERR); // 获取最优解
->>>>>>> main
 
   // 初始化对象池、调度器、段管理器和磁盘管理器
   ObjectPool pool(t);
