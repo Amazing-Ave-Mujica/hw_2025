@@ -44,21 +44,14 @@ private:
         penalty += beta_ * s_ij*s_ij;
       }
     }
-    //正则项，保证每个磁盘的资源分配均匀
-    for(int i=0;i<n_;i++){
-      int count_in_disk=0;
-      for(int j=0;j<m_;j++){
-        count_in_disk+=x[j][i];
-      }
-      penalty+=gama_*(count_in_disk-v_)*(count_in_disk-v_);
-    }
-    //正则项，保证每种资源的分配均匀
-    for(int j=0;j<m_;j++){
+    //正则项，保证每种资源分配靠近r[i]  
+    for(int i=0;i<m_;i++){
       int count_in_resource=0;
-      for(int i=0;i<n_;i++){
-        count_in_resource+=x[j][i];
+      for(int j=0;j<n_;j++){
+        count_in_resource+=x[i][j];
       }
-      penalty+=gama_*(count_in_resource-r_[j])*(count_in_resource-r_[j]);
+      int excess = count_in_resource - r_[i];
+      penalty+=gama_*excess*excess;
     }
     return penalty;
   }
@@ -92,25 +85,25 @@ private:
         if (!assigned) {break;} // 如果无法继续分配，则停止
       }
     }
-
+    AdjustSolution(x);
     return x;
   }
   // **调整资源分配，使得每个容器的资源分配为v**
-  auto AdjustSolution()->void{
+  auto AdjustSolution(std::vector<std::vector<int>>&x)->void{
     std::uniform_int_distribution<int> dist_m(0, m_ - 1);
     for(int i=0;i<n_;i++){
       int delta=-v_;
       for(int j=0;j<m_;j++){
-        delta+=best_x_[j][i];
+        delta+=x[j][i];
       }
       while(delta!=0){
         int j=dist_m(rng_);
         if(delta>0){
-          int d=std::min(delta,best_x_[j][i]);
-          best_x_[j][i]-=d;
+          int d=std::min(delta,x[j][i]);
+          x[j][i]-=d;
           delta-=d;
         }else{
-          best_x_[j][i]-=delta;
+          x[j][i]-=delta;
           delta=0;
         }
       }
@@ -136,22 +129,22 @@ public:
     std::uniform_int_distribution<int> dist_m(0, m_ - 1);
 
     for (int iter = 0; iter < maxIter; ++iter) {
-      // **随机选择两个不同容器 j1, j2**
-      int j1 = dist_n(rng_);
-      int j2 = dist_n(rng_);
-      while (j1 == j2) {
-        j2 = dist_n(rng_);
+      // **随机选择两个种不同资源 i1, i2**
+      int i1 = dist_m(rng_);
+      int i2 = dist_m(rng_);
+      while (i1 == i2) {
+        i2 = dist_n(rng_);
       }
 
-      // **随机选择资源 i**
-      int i = dist_m(rng_);
+      // **随机选择容器 j**
+      int j = dist_n(rng_);
 
-      // **交换 i 资源的部分数量**
+      // **交换 j 容器的部分数量**
       int delta = std::uniform_int_distribution<int>(
-          0, std::min(x[i][j1], v_ - x[i][j2]))(rng_);
+          0, std::min(x[i1][j], x[i2][j]))(rng_);
       std::vector<std::vector<int>> x_new = x;
-      x_new[i][j1] -= delta;
-      x_new[i][j2] += delta;
+      x_new[i1][j] -= delta;
+      x_new[i2][j] += delta;
 
       // **计算新解的惩罚值**
       db e_new = ComputePenalty(x_new);
@@ -177,21 +170,27 @@ public:
       }
     }
     //**调整最后的资源**
-    AdjustSolution();
+    // AdjustSolution(best_x_);
   }
   
   // **获取最优解**
   auto GetBestSolution(bool iscerr=false) const -> std::vector<std::vector<int>> {
     if(iscerr){
+      std::vector<int>c(n_,0);
       std::cerr << "Minimum penalty: " << best_penalty_ << '\n';
       std::cerr << "Optimal allocation:\n";
       for (int i = 0; i < m_; ++i) {
         std::cerr << "Resource " << i + 1 << ": ";
         for (int j = 0; j < n_; ++j) {
           std::cerr << best_x_[i][j] << " ";
+          c[j]+=best_x_[i][j];
         }
         std::cerr << '\n';
       }
+      for(int i=0;i<n_;i++){
+        std::cerr<<c[i]<<' ';
+      }
+      std::cerr<<'\n';
     }
     return best_x_;
   }
@@ -234,15 +233,15 @@ private:
         }
       }
     }
-
     // 超额部分惩罚
     for (int j = 0; j < n_; ++j) {
       for (int i = 0; i < m_; ++i) {
-        int excess = x[i][j] - l_;
+        // int excess = x[i][j]-l_;
+        int excess = std::max(0,x[i][j] - l_);
         penalty += beta_ * excess*excess;
       }
     }
-    //正则项，保证每个磁盘的资源分配均匀
+    /*正则项，保证每个磁盘的资源分配均匀
     for(int i=0;i<n_;i++){
       int count_in_disk=0;
       for(int j=0;j<m_;j++){
@@ -251,7 +250,8 @@ private:
       int excess = count_in_disk - v_;
       penalty+=gama_*excess*excess;
     }
-    //正则项，保证每种资源的分配均匀
+      */
+    //正则项，保证每种资源分配靠近r[i]  
     for(int i=0;i<m_;i++){
       int count_in_resource=0;
       for(int j=0;j<n_;j++){
@@ -355,17 +355,17 @@ private:
     std::uniform_real_distribution<db>dist_mutate(0.0,1.0);
 
     if (dist_mutate(rng_) < K_MUTATE_RATE) {
-      int i = dist_m(rng_);
-      int j1 = dist_n(rng_);
-      int j2 = dist_n(rng_);
-      while(j1==j2){
-        j2=dist_n(rng_);
+      int i1 = dist_m(rng_);
+      int i2 = dist_m(rng_);
+      int j = dist_n(rng_);
+      while(i1==i2){
+        i2=dist_m(rng_);
       }
 
-      std::uniform_int_distribution<int> dist_v(0,indiv.allocation_[i][j2]);
+      std::uniform_int_distribution<int> dist_v(0,indiv.allocation_[i2][j]);
       int delta = dist_v(rng_);
-      indiv.allocation_[i][j1] += delta;
-      indiv.allocation_[i][j2] -= delta; 
+      indiv.allocation_[i1][j] += delta;
+      indiv.allocation_[i2][j] -= delta; 
     }
 
     indiv.fitness_ = ComputePenalty(indiv.allocation_);
@@ -446,7 +446,7 @@ public:
         best = indiv;
       }
     }
-    AdjustSolution(best.allocation_);
+    // AdjustSolution(best.allocation_);
     if(iscerr){
       std::vector<int>c(n_,0);;
       std::cerr << "Optimal Solution (Penalty: " << best.fitness_ << "):\n";
@@ -466,8 +466,8 @@ public:
     return best.allocation_;
   }
 };
-// using ResourceAllocator=AnnealOptimizer;
-using ResourceAllocator=GeneticOptimizer;
+using ResourceAllocator=AnnealOptimizer;
+// using ResourceAllocator=GeneticOptimizer;
 /*
 baseline:AnnealOptimizer 
 gama=10 Minimum penalty: 1.55361e+08

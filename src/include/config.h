@@ -16,8 +16,8 @@ namespace config{
     static constexpr int SEGMENT_DEFAULT_CAPACITY=10;//段默认容量
     static constexpr int PRINTER_BUF_CAPACITY=(1<<20);//打印缓冲区容量
 
-    static constexpr int K_POP_SIZE = 200;       // 种群大小
-    static constexpr int K_MAX_GEN = 2000;        // 最大迭代次数
+    static constexpr int K_POP_SIZE = 300;       // 种群大小
+    static constexpr int K_MAX_GEN = 3000;        // 最大迭代次数
     static constexpr db K_CROSS_RATE = 0.5; // 交叉概率
     static constexpr db K_MUTATE_RATE = 0.05; // 变异概率
     static constexpr int ELITE_NUM=10;//精英个体数量
