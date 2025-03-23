@@ -119,10 +119,10 @@ public:
       int j2=dist_n(rng_);
       std::uniform_int_distribution<int>dist_r(0,std::min(x[i2][j1],x[i1][j2]));
       int delta=dist_r(rng_);
-      x[i1][j1]+=delta;
-      x[i2][j1]-=delta;
-      x[i2][j2]+=delta;
-      x[i1][j2]-=delta;
+      x_new[i1][j1]+=delta;
+      x_new[i2][j1]-=delta;
+      x_new[i2][j2]+=delta;
+      x_new[i1][j2]-=delta;
 
       // **计算新解的惩罚值**
       db e_new = ComputePenalty(x_new);

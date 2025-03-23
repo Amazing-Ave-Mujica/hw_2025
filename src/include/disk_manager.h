@@ -154,12 +154,19 @@ public:
         printer::ReadSetJump(disk_id, x); // 打印跳转信息
       } else {
         int rd_cost = disk.ReadCost();
-        if (time >= rd_cost && ReadDist(disk_id, x) <= 12 && rd_cost <= 17) {
-          auto [oid, y] = disk.GetStorageAt(disk.itr_);
-          disk.Read(time); // 执行读取操作
-          printer::ReadAddRead(disk_id, 1); // 打印读取信息
-          if (oid >= 0) {
-            scheduler_->Update(oid, y); // 更新调度器信息
+        if (ReadDist(disk_id, x) <= 12 ) {
+          if(time >= rd_cost){
+            auto [oid, y] = disk.GetStorageAt(disk.itr_);
+            disk.Read(time); // 执行读取操作
+            printer::ReadAddRead(disk_id, 1); // 打印读取信息
+            if (oid >= 0) {
+              scheduler_->Update(oid, y); // 更新调度器信息
+            }
+          }else if(rd_cost>=64&&time>0){
+            disk.Pass(time); // 跳过当前块
+            printer::ReadAddPass(disk_id, 1); // 打印跳过信息
+          }else{
+            break;
           }
         } else {
           disk.Pass(time); // 跳过当前块
