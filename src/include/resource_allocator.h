@@ -44,70 +44,53 @@ private:
         penalty += beta_ * s_ij*s_ij;
       }
     }
-    //正则项，保证每种资源分配靠近r[i]  
-    for(int i=0;i<m_;i++){
-      int count_in_resource=0;
-      for(int j=0;j<n_;j++){
-        count_in_resource+=x[i][j];
-      }
-      int excess = count_in_resource - r_[i];
-      penalty+=gama_*excess*excess;
-    }
     return penalty;
   }
 
   // **初始化可行解**
   auto InitializeSolution() -> std::vector<std::vector<int>> {
     std::vector<std::vector<int>> x(m_, std::vector<int>(n_, 0));
-    std::vector<int> remaining = r_;
+    std::vector<int> remaining_r = r_;  // 记录每种资源剩余可分配数量
+    std::vector<int> remaining_v(n_, v_);  // 记录每个容器剩余容量
 
-    // **随机打乱资源索引，提高公平性**
-    std::vector<int> resource_indices(m_);
+    std::uniform_int_distribution<int>dist_m(0,m_-1), dist_n(0,n_-1);//NOLINT
+  
+    // **第一步：均匀分配资源，保证 r[i] 约束**
     for (int i = 0; i < m_; ++i) {
-      resource_indices[i] = i;
-    }
-    std::shuffle(resource_indices.begin(), resource_indices.end(), rng_);
-
-    // **轮盘式分配，尽量均匀**
-    for (int i : resource_indices) {
-      int allocated = 0; // 记录已分配的资源量
-      while (remaining[i] > 0) {
-        bool assigned = false;
-        for (int j = 0; j < n_ && remaining[i] > 0; ++j) {
-          if (allocated < v_) {
-            int allocate_amount = std::min(remaining[i], 1);
-            x[i][j] += allocate_amount;
-            remaining[i] -= allocate_amount;
-            allocated += allocate_amount;
-            assigned = true;
+      while (remaining_r[i] > 0) {
+          int j = dist_n(rng_);  // 随机选择容器
+          if (remaining_v[j] > 0) {  // 容器仍有可用容量
+              int allocate_amount = std::min({remaining_r[i], remaining_v[j], 1});
+              x[i][j] += allocate_amount;
+              remaining_r[i] -= allocate_amount;
+              remaining_v[j] -= allocate_amount;
           }
-        }
-        if (!assigned) {break;} // 如果无法继续分配，则停止
       }
     }
-    AdjustSolution(x);
+    // **第二步：调整，使得每个容器正好填满 v**
+    for (int j = 0; j < n_; ++j) {
+        int sum = 0;
+        for (int i = 0; i < m_; ++i) {
+            sum += x[i][j];
+        }
+        int diff = sum - v_;
+
+        while (diff != 0) {
+            int i = dist_m(rng_);
+            if (diff > 0 && x[i][j] > 0) {  // 超配，减少
+                int adjust = std::min(diff, x[i][j]);
+                x[i][j] -= adjust;
+                diff -= adjust;
+            } else if (diff < 0 && remaining_r[i] > 0) {  // 少配，增加
+                int adjust = std::min(-diff, remaining_r[i]);
+                x[i][j] += adjust;
+                remaining_r[i] -= adjust;
+                diff += adjust;
+            }
+        }
+    }
+    // AdjustSolution(x);
     return x;
-  }
-  // **调整资源分配，使得每个容器的资源分配为v**
-  auto AdjustSolution(std::vector<std::vector<int>>&x)->void{
-    std::uniform_int_distribution<int> dist_m(0, m_ - 1);
-    for(int i=0;i<n_;i++){
-      int delta=-v_;
-      for(int j=0;j<m_;j++){
-        delta+=x[j][i];
-      }
-      while(delta!=0){
-        int j=dist_m(rng_);
-        if(delta>0){
-          int d=std::min(delta,x[j][i]);
-          x[j][i]-=d;
-          delta-=d;
-        }else{
-          x[j][i]-=delta;
-          delta=0;
-        }
-      }
-    }
   }
 public:
   // **构造函数**
@@ -129,22 +112,17 @@ public:
     std::uniform_int_distribution<int> dist_m(0, m_ - 1);
 
     for (int iter = 0; iter < maxIter; ++iter) {
-      // **随机选择两个种不同资源 i1, i2**
-      int i1 = dist_m(rng_);
-      int i2 = dist_m(rng_);
-      while (i1 == i2) {
-        i2 = dist_n(rng_);
-      }
-
-      // **随机选择容器 j**
-      int j = dist_n(rng_);
-
-      // **交换 j 容器的部分数量**
-      int delta = std::uniform_int_distribution<int>(
-          0, std::min(x[i1][j], x[i2][j]))(rng_);
       std::vector<std::vector<int>> x_new = x;
-      x_new[i1][j] -= delta;
-      x_new[i2][j] += delta;
+      int i1=dist_m(rng_);
+      int i2=dist_m(rng_);
+      int j1=dist_n(rng_);
+      int j2=dist_n(rng_);
+      std::uniform_int_distribution<int>dist_r(0,std::min(x[i2][j1],x[i1][j2]));
+      int delta=dist_r(rng_);
+      x[i1][j1]+=delta;
+      x[i2][j1]-=delta;
+      x[i2][j2]+=delta;
+      x[i1][j2]-=delta;
 
       // **计算新解的惩罚值**
       db e_new = ComputePenalty(x_new);
@@ -176,7 +154,7 @@ public:
   // **获取最优解**
   auto GetBestSolution(bool iscerr=false) const -> std::vector<std::vector<int>> {
     if(iscerr){
-      std::vector<int>c(n_,0);
+      std::vector<int>c(n_,0),r(m_,0);//NOLINT
       std::cerr << "Minimum penalty: " << best_penalty_ << '\n';
       std::cerr << "Optimal allocation:\n";
       for (int i = 0; i < m_; ++i) {
@@ -184,13 +162,18 @@ public:
         for (int j = 0; j < n_; ++j) {
           std::cerr << best_x_[i][j] << " ";
           c[j]+=best_x_[i][j];
+          r[i]+=best_x_[i][j];
         }
         std::cerr << '\n';
       }
-      for(int i=0;i<n_;i++){
-        std::cerr<<c[i]<<' ';
+      for(int i=0;i<n_;i++) {assert(c[i]==v_);}
+      for(int i=0;i<m_;i++) {assert(r[i]==r_[i]);}
+      for(int i=0;i<m_;i++){
+        for(int j=0;j<m_;j++){
+          std::cerr<<alpha_[i][j]<<' ';
+        }
+        std::cerr<<'\n';
       }
-      std::cerr<<'\n';
     }
     return best_x_;
   }
