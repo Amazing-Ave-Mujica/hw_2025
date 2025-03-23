@@ -1,6 +1,7 @@
 #pragma once
+#pragma optimize(2)
 using db=long double;
-#define ISCERR false
+#define ISCERR true
 namespace config{
 
     //#define LLDB
