@@ -77,6 +77,7 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g, Data delete_data, 
 auto InitTSP(int n, int m, const std::vector<std::vector<db>> &alpha,const std::vector<std::vector<int>>&solution) -> 
         std::vector<std::vector<int>> {
     std::vector<std::vector<int>>ans;
+    #ifdef USINGTSP
     for(int _=0;_<n;_++){
         std::vector<std::vector<db>> dist(m,std::vector<db>(m,0));
         for(int i=0;i<m;i++){
@@ -94,4 +95,10 @@ auto InitTSP(int n, int m, const std::vector<std::vector<db>> &alpha,const std::
         ans.push_back(tsp);
     }
     return ans;
+    #else
+    std::vector<int>tmp(m);
+    iota(tmp.begin(),tmp.end(),0);
+    ans.assign(n,tmp);
+    return ans;
+    #endif
 }

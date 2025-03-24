@@ -139,20 +139,9 @@ public:
         break; // 如果没有推荐位置，退出
       }
       if (disk.itr_ == x) {
-        if (disk.ReadCost() <= time) { // 如果有足够时间完成读取
-          disk.Read(time); // 执行读取操作
-          printer::ReadAddRead(disk_id, 1); // 打印读取信息
-          assert(x >= 0 && x < disk.capacity_);
-          auto [oid, y] = disk.GetStorageAt(x); // 获取读取的数据
-          scheduler_->Update(oid, y); // 更新调度器信息
-          continue;
-        }
-        break; // 如果时间不足，退出
+        break;
       }
-      if (ReadDist(disk_id, x) >= life_ && time == life_) {
-        disk.Jump(time, x); // 跳转到目标位置
-        printer::ReadSetJump(disk_id, x); // 打印跳转信息
-      } else {
+      {
         int rd_cost = disk.ReadCost();
         if (ReadDist(disk_id, x) <= 12 ) {
           if(time >= rd_cost){
