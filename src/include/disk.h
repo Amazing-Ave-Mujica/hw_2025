@@ -117,18 +117,24 @@ public:
     return storage_[idx];                // 返回存储块内容
   }
 
-  // 获取从指定索引开始的最大连续空闲块长度
-  auto GetMaxLen(int tag, int idx = 0, int len = INT32_MAX) {
+  /**
+   * @brief 计算从 idx 开始 长度为 len 的一段磁盘空间里最长连续段在哪里和有多长
+   * @param idx 起始编号
+   * @param len 表示长度
+   */
+  auto GetMaxLen(int idx = 0, int len = INT32_MAX) {
     len = std::min(len, capacity_ - idx); // 确保长度不超过容量
-    int res = 0;                          // 最大连续空闲块长度
+    int maxlen = 0;
+    int pos = 0; // 最大连续空闲块长度
     for (int i = idx, cnt = 0; i < len; i++) {
       cnt = (storage_[idx] == EMPTY_BLOCK) ? cnt + 1 : 0; // 计算连续空闲块
-      res = std::max(res, cnt);                           // 更新最大长度
-      if (cnt == 0) {
-        break; // 如果遇到非空块，则停止计算
+      if (maxlen < cnt) {
+        maxlen = cnt;
+        pos = i - maxlen + 1;
       }
+      maxlen = std::max(maxlen, cnt); // 更新最大长度
     }
-    return res; // 返回最大连续空闲块长度
+    return std::pair(pos, maxlen); // 返回最大连续空闲块长度
   }
 
   auto GetFreeSize() -> int { return free_size_; }   // 获取空闲块数量

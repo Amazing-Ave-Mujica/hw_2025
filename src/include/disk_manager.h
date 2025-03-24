@@ -108,8 +108,41 @@ public:
       }
       return false; // 写入失败
     };
+    // 从段内写入一整块
+    auto write_by_segment_whole = [&]() {
+      int tag = object->tag_; // 获取对象的标签
+      for (auto od : sf) {
+        auto &disk = disks_[od];
+        auto ptr = seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
+        if (ptr == nullptr) {
+          continue; // 如果没有找到合适的段，跳过
+        }
+        bool exist = false;
+        for (int i = 0; i < kth; i++) {
+          exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
+        }
+        if (exist) {
+          continue; // 如果已存在副本，跳过
+        }
+        auto [pos, maxlen] =
+            disk.GetMaxLen(ptr->disk_addr_, ptr->disk_addr_ + ptr->capacity_);
+        if (maxlen < object->size_) {
+          continue;
+        }
+        object->idisk_[kth] = od; // 设置副本所在磁盘
+        for (int j = 0; j < object->size_; j++) {
+          object->tdisk_[kth][j] = disk.WriteBlock(pos, oid, j); // 写入数据到段
+        }
+        ptr->Write(object->size_); // 更新段信息
+        return true;               // 写入成功
+      }
+      return false; // 写入失败
+    };
 
     // 优先按段写入，如果失败则按块写入
+    if (write_by_segment_whole()) {
+      return true;
+    }
     if (write_by_segment()) {
       return true;
     }
