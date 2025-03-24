@@ -10,8 +10,9 @@
 static constexpr int TIME_SLICE_DIVISOR =
     config::TIME_SLICE_DIVISOR; // 常量替代魔法数字
 
-auto InitResourceAllocator(int t, int m, int n, int v, int g, Data delete_data,
-                           Data write_data, Data read_data)
+auto InitResourceAllocator(int t, int m, int n, int v, int g,
+                           const Data &delete_data, const Data &write_data,
+                           const Data &read_data)
     -> std::pair<std::vector<std::vector<int>>, std::vector<std::vector<db>>> {
   // 初始化时间片数据
   std::vector<std::vector<int>> timeslice_data(

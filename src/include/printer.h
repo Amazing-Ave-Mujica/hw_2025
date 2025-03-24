@@ -19,7 +19,7 @@ namespace printer {
 int buf[3]
        [config::PRINTER_BUF_CAPACITY]; // 三种请求类型的缓冲区，每种类型最多存储
                                        // 2^20 个请求
-int top[3] = {0};                      // 每种请求缓冲区的当前大小
+int top[3] = {0};               // 每种请求缓冲区的当前大小
 std::string ops[config::MAX_N]; // 每个磁盘的操作记录（最多支持 10 个磁盘）
 
 // 请求类型的枚举
@@ -102,7 +102,7 @@ auto PrintWrite(ObjectPool &obj_pool) -> void {
     std::cout << buf[WRITE][i] + 1 << '\n'; // 打印写入对象的 ID（从 1 开始）
     auto obj = obj_pool.GetObjAt(buf[WRITE][i]); // 获取对象
     for (int j = 0; j < 3; j++) {                // 遍历对象的每个副本
-      std::cout << obj->idisk_[j] + 1 << ' ';    // 打印副本所在的磁盘编号
+      std::cout << obj->idisk_[j] + 1 << ' '; // 打印副本所在的磁盘编号
       for (auto it : obj->tdisk_[j]) {
         std::cout << it + 1 << ' '; // 打印副本的块编号
       }
