@@ -56,6 +56,11 @@ public:
 
     // 按块写入数据
     auto write_by_block = [&]() {
+      #ifdef WRITE_BALANCE
+      sort(sf.begin(), sf.end(), [&](int a, int b) {
+        return disks_[a].GetFreeSize() > disks_[b].GetFreeSize();
+      });
+      #endif
       for (auto od : sf) {
         auto &disk = disks_[od];
         if (disk.free_size_ >= object->size_) { // 检查磁盘是否有足够空间
@@ -362,6 +367,7 @@ public:
     return ReadDist(disk_id, dest);
   }
 
+  auto GetDisk(int disk_id) -> Disk & { return disks_[disk_id]; } // 获取磁盘
 private:
   const int disk_cnt_;      // 磁盘数量
   const int life_;          // 磁盘生命周期

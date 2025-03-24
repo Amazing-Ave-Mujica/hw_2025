@@ -14,6 +14,7 @@
 #include <iostream>
 #include <limits>
 #include <numeric>
+#include <thread>
 
 int timeslice = 0;
 
@@ -116,11 +117,19 @@ auto main() -> int {
   (std::cout << "OK\n").flush(); // 输出初始化完成信息
   // 主循环，处理每个时间片
   for (timeslice = 1; timeslice <= t + 105; timeslice++) {
-    sync();                // 同步时间片
-    delete_op();           // 处理删除操作
-    write_op();            // 处理写入操作
-    read_op();             // 处理读取操作
-    tes.Read();            // 执行读取操作
+    sync();       // 同步时间片
+    delete_op();  // 处理删除操作
+    write_op();   // 处理写入操作
+    read_op();    // 处理读取操作
+    tes.Read();   // 执行读取操作
+    #ifdef ISCERR
+    if(timeslice==t+105){
+      for(int i=0;i<n;i++){
+        auto x=dm.GetDisk(i);
+        std::cerr<<"Disk "<<i<<" read count: "<<x.GetReadCount()<<'\n';
+      }
+    }
+    #endif
     printer::PrintRead(n); // 打印读取信息
   }
 }
