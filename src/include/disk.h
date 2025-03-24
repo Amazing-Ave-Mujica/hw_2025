@@ -127,6 +127,7 @@ public:
     return res; // 返回最大连续空闲块长度
   }
 
+  auto GetFreeSize() -> int { return free_size_; } // 获取空闲块数量
 private:
   const int disk_id_; // 磁盘 ID
   const int capacity_; // 磁盘容量（块数）

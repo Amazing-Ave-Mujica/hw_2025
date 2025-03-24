@@ -53,6 +53,9 @@ public:
     std::iota(sf.begin(), sf.end(), 0);
     std::mt19937 rng(config::RANDOM_SEED);
     std::shuffle(sf.begin(), sf.end(), rng);
+    // sort(sf.begin(), sf.end(), [&](int a, int b) {
+    //   return disks_[a].GetFreeSize() > disks_[b].GetFreeSize();
+    // });
 
     // 按块写入数据
     auto write_by_block = [&]() {
