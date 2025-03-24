@@ -53,14 +53,14 @@ public:
     std::iota(sf.begin(), sf.end(), 0);
     std::mt19937 rng(config::RANDOM_SEED);
     std::shuffle(sf.begin(), sf.end(), rng);
-    #ifdef WRITE_BALANCE
-    sort(sf.begin(), sf.end(), [&](int a, int b) {
-      return disks_[a].GetFreeSize() > disks_[b].GetFreeSize();
-    });
-    #endif
 
     // 按块写入数据
     auto write_by_block = [&]() {
+      #ifdef WRITE_BALANCE
+      sort(sf.begin(), sf.end(), [&](int a, int b) {
+        return disks_[a].GetFreeSize() > disks_[b].GetFreeSize();
+      });
+      #endif
       for (auto od : sf) {
         auto &disk = disks_[od];
         if (disk.free_size_ >= object->size_) { // 检查磁盘是否有足够空间

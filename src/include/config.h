@@ -30,7 +30,7 @@ namespace config{
     static constexpr db K_MUTATE_RATE = 0.05; // 变异概率
     static constexpr int ELITE_NUM=10;//精英个体数量
 
-    static constexpr int DISK_READ_FETCH_LEN = 30; // 规划最近的读取任务个数
+    static constexpr int DISK_READ_FETCH_LEN = 63; // 规划最近的读取任务个数
 
     static constexpr db INF=1e18;//无穷大
 }  // namespace config
