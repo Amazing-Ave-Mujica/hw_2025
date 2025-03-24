@@ -31,8 +31,8 @@ static constexpr db K_MUTATE_RATE = 0.05; // 变异概率
 static constexpr int ELITE_NUM = 10;      // 精英个体数量
 
 static constexpr int DISK_READ_FETCH_LEN = 63; // 规划最近的读取任务个数
-static constexpr int RTQ_DISK_PART_SIZE = 10;  // RTQ 给磁盘分区大小
-static constexpr int JUMP_THRESHOLD = 60;     // 热门块比当前块大多少时直接跳转
+static constexpr int RTQ_DISK_PART_SIZE = 450;  // RTQ 给磁盘分区大小
+static constexpr int JUMP_THRESHOLD = 450;     // 热门块比当前块大多少时直接跳转
 
 static constexpr db INF = 1e18; // 无穷大
 } // namespace config
