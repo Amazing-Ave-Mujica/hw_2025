@@ -14,6 +14,7 @@
 #include <iostream>
 #include <limits>
 #include <numeric>
+#include <thread>
 
 int timeslice = 0;
 
@@ -120,6 +121,14 @@ auto main() -> int {
     write_op();   // 处理写入操作
     read_op();    // 处理读取操作
     tes.Read();   // 执行读取操作
+    #ifdef ISCERR
+    if(timeslice==t+105){
+      for(int i=0;i<n;i++){
+        auto x=dm.GetDisk(i);
+        std::cerr<<"Disk "<<i<<" read count: "<<x.GetReadCount()<<'\n';
+      }
+    }
+    #endif
     printer::PrintRead(n); // 打印读取信息
   }
 }

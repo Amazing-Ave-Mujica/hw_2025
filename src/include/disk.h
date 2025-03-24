@@ -27,6 +27,7 @@ public:
     }
     prev_is_rd_ = false; // 初始化为非读取状态
     free_size_ = capacity_; // 空闲块数量等于总容量
+    read_count_=0;
   }
 
   // 写入数据到磁盘的空闲块
@@ -81,6 +82,7 @@ public:
         int x;
       }
       assert(time >= 0);
+      read_count_++;
     }
   }
 
@@ -128,6 +130,7 @@ public:
   }
 
   auto GetFreeSize() -> int { return free_size_; } // 获取空闲块数量
+  auto GetReadCount() -> int { return read_count_; } // 获取读取次数
 private:
   const int disk_id_; // 磁盘 ID
   const int capacity_; // 磁盘容量（块数）
@@ -136,6 +139,7 @@ private:
   int itr_{}; // 当前迭代器位置
   int prev_rd_cost_; // 上一次读取操作的成本
   bool prev_is_rd_; // 上一次操作是否为读取
+  int read_count_; // 读取次数
 
   int free_size_; // 当前空闲块数量
   std::set<int> free_block_idck_idck_; // 空闲块集合

@@ -53,9 +53,11 @@ public:
     std::iota(sf.begin(), sf.end(), 0);
     std::mt19937 rng(config::RANDOM_SEED);
     std::shuffle(sf.begin(), sf.end(), rng);
-    // sort(sf.begin(), sf.end(), [&](int a, int b) {
-    //   return disks_[a].GetFreeSize() > disks_[b].GetFreeSize();
-    // });
+    #ifdef WRITE_BALANCE
+    sort(sf.begin(), sf.end(), [&](int a, int b) {
+      return disks_[a].GetFreeSize() > disks_[b].GetFreeSize();
+    });
+    #endif
 
     // 按块写入数据
     auto write_by_block = [&]() {
@@ -353,6 +355,7 @@ public:
     return ReadDist(disk_id, dest);
   }
 
+  auto GetDisk(int disk_id) -> Disk & { return disks_[disk_id]; } // 获取磁盘
 private:
   const int disk_cnt_; // 磁盘数量
   const int life_; // 磁盘生命周期
