@@ -1,11 +1,15 @@
 #pragma once
 
+#include "config.h"
 #include "object.h"
 #include "printer.h"
 #include "task.h"
 #include <list>
 #include <memory>
 #include <set>
+#include <algorithm>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #ifndef _TIMESLICE
@@ -24,13 +28,37 @@ void AddDeleteObject(TaskManager &t);
 2. 读某个 TAG 尽量让指针同方向移动
 3. 设置时间片轮转机制防止饥饿
 */
-struct RTQ {
+class RTQ {
+private:
+  void UpdateSum(int x, int v = 1) {
+    auto it = std::upper_bound(sum_.begin(), sum_.end(), std::make_pair(x, INT_MAX));
+    assert(it != sum_.begin());
+    it = prev(it);
+    it->second += v;
+  }
+
 public:
+  // 构造函数
+  explicit RTQ(int V) {
+    for (int i = 0; i < V; i += config::RTQ_DISK_PART_SIZE) {
+      sum_.emplace_back(i, 0);
+    }
+    sum_.emplace_back(V, 0);
+  }
+
   // 将块 ID 添加到队列中
-  void Push(int x) { st_.insert(x); }
+  void Push(int x) {
+    st_.insert(x);
+    ++cnt_[x];
+    UpdateSum(x);
+  }
 
   // 从队列中移除指定块 ID
-  void Remove(int x) { st_.erase(x); }
+  void Remove(int x) {
+    UpdateSum(x, -cnt_[x]);
+    st_.erase(x);
+    cnt_.erase(x);
+  }
 
   // 获取队列中最接近指定位置的块 ID
   // 参数：
@@ -69,8 +97,23 @@ public:
   // 获取队列的大小
   auto GetSize() -> int { return st_.size(); }
 
+  // 得到最热门的块
+  auto GetHotBlock() -> int {
+    int mx = 0;
+    int pos = 0;
+    for (const auto &[x, y] : sum_) {
+      if (mx < y) {
+        pos = x;
+        mx = y;
+      }
+    }
+    return Front(pos);
+  }
+
 private:
   std::set<int> st_; // 使用有序集合维护块 ID，支持快速查找和删除
+  std::vector<std::pair<int, int>> sum_; // 前缀和
+  std::unordered_map<int, int> cnt_; // 出现次数
 };
 
 // 每个对象一个 TaskManager，用于管理对象的任务
@@ -148,9 +191,9 @@ public:
   // - obj_pool: 对象池，用于管理对象
   // - N: 磁盘数量
   // - T: 时间片数量
-  explicit Scheduler(ObjectPool *obj_pool, int N, int T) : obj_pool_(obj_pool) {
+  explicit Scheduler(ObjectPool *obj_pool, int N, int T, int V) : obj_pool_(obj_pool) {
     task_mgr_.reserve(T + 105); // 预留任务管理器的空间
-    q_.resize(N + N);           // 初始化每个磁盘的读取队列
+    q_.resize(N, (RTQ){V});           // 初始化每个磁盘的读取队列
   }
 
   // 创建新的任务管理器
@@ -189,6 +232,11 @@ public:
   // 一次获取 k 个读任务
   auto GetRTK(int disk_id, int pos, int k) -> std::vector<int> {
     return q_[disk_id].FrontK(pos, k);
+  }
+
+  // 跳的时候获取最热门的块
+  auto GetHotRT(int disk_id) -> int {
+    return q_[disk_id].GetHotBlock();
   }
 
   // 获取指定磁盘的读取队列大小

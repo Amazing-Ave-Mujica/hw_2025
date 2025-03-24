@@ -28,7 +28,7 @@ auto main() -> int {
   std::cin.tie(nullptr);
 
   int t, m, n, v, g; // NOLINT
-  std::cin >> t >> m >> n >> v >> g; // 输入时间片数量、标签数量、磁盘数量、磁盘容量和生命周期
+  std::cin >> t >> m >> n >> v >> g; // 输入时间片数量、标签数量、磁盘数量、磁盘容量、生命周期
 
   // 初始化数据结构
   Data delete_data(m, ((t - 1) / TIME_SLICE_DIVISOR) + 1); // 删除数据
@@ -58,7 +58,7 @@ auto main() -> int {
   
   // 初始化对象池、调度器、段管理器和磁盘管理器
   ObjectPool pool(t);
-  Scheduler none(&pool, n, t);
+  Scheduler none(&pool, n, t, v);
   SegmentManager seg_mgr(m, n, v, best_solution,tsp);
   DiskManager dm(&pool, &none, &seg_mgr, n, v, g);
   TopScheduler tes(&timeslice, &none, &pool, &dm);

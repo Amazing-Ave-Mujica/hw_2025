@@ -181,8 +181,9 @@ public:
 
     // 如果最近的任务都太远，就直接 jump
     if (ReadDist(disk_id, task_k[0]) >= life_) {
-      disk.Jump(time, task_k[0]); // 跳转到目标位置
-      printer::ReadSetJump(disk_id, task_k[0]); // 打印跳转信息
+      int target = scheduler_->GetHotRT(disk_id);
+      disk.Jump(time, target); // 跳转到目标位置
+      printer::ReadSetJump(disk_id, target); // 打印跳转信息
       return;
     }
 
@@ -295,8 +296,9 @@ public:
 
     // 一个也读不出来直接 jump
     if (path.empty()) {
-      disk.Jump(time, task_k[0]); // 跳转到目标位置
-      printer::ReadSetJump(disk_id, task_k[0]); // 打印跳转信息
+      int target = scheduler_->GetHotRT(disk_id);
+      disk.Jump(time, target); // 跳转到目标位置
+      printer::ReadSetJump(disk_id, target); // 打印跳转信息
       return;
     }
     
