@@ -2,13 +2,13 @@
 #include "include/data.h"
 #include "include/disk.h"
 #include "include/disk_manager.h"
+#include "include/init.h"
 #include "include/object.h"
 #include "include/printer.h"
+#include "include/resource_allocator.h"
 #include "include/scheduler.h"
 #include "include/top_scheduler.h"
-#include "include/resource_allocator.h"
 #include "include/tsp.h"
-#include "include/init.h"
 #include <algorithm>
 #include <cstdio>
 #include <iostream>
@@ -19,16 +19,17 @@ int timeslice = 0;
 
 auto main() -> int {
 
-  #ifdef LLDB
-    freopen(R"(D:\Documents\hw_2025\data\sample.in)", "r", stdin);
-    freopen(R"(D:\Documents\hw_2025\log.txt)", "w", stdout);
-  #endif
+#ifdef LLDB
+  freopen(R"(D:\Documents\hw_2025\data\sample.in)", "r", stdin);
+  freopen(R"(D:\Documents\hw_2025\log.txt)", "w", stdout);
+#endif
 
   std::ios::sync_with_stdio(false);
   std::cin.tie(nullptr);
 
   int t, m, n, v, g; // NOLINT
-  std::cin >> t >> m >> n >> v >> g; // 输入时间片数量、标签数量、磁盘数量、磁盘容量、生命周期
+  std::cin >> t >> m >> n >> v >>
+      g; // 输入时间片数量、标签数量、磁盘数量、磁盘容量、生命周期
 
   // 初始化数据结构
   Data delete_data(m, ((t - 1) / TIME_SLICE_DIVISOR) + 1); // 删除数据
@@ -52,14 +53,14 @@ auto main() -> int {
     }
   }
   // 初始化资源分配器并进行模拟退火优化
-  auto [best_solution,alpha] = 
-    InitResourceAllocator(t, m, n, v, g,delete_data,write_data,read_data); // 获取最优解
-  auto tsp=InitTSP(n,m,alpha,best_solution); // 初始化 TSP 问题
-  
+  auto [best_solution, alpha] = InitResourceAllocator(
+      t, m, n, v, g, delete_data, write_data, read_data); // 获取最优解
+  auto tsp = InitTSP(n, m, alpha, best_solution);         // 初始化 TSP 问题
+
   // 初始化对象池、调度器、段管理器和磁盘管理器
   ObjectPool pool(t);
   Scheduler none(&pool, n, t, v);
-  SegmentManager seg_mgr(m, n, v, best_solution,tsp);
+  SegmentManager seg_mgr(m, n, v, best_solution, tsp);
   DiskManager dm(&pool, &none, &seg_mgr, n, v, g);
   TopScheduler tes(&timeslice, &none, &pool, &dm);
 
@@ -95,7 +96,7 @@ auto main() -> int {
       --id;
       --tag;
       auto oid = tes.InsertRequest(id, size, tag); // 插入请求
-      printer::AddInsertedObject(oid); // 添加写入对象
+      printer::AddInsertedObject(oid);             // 添加写入对象
     }
     printer::PrintWrite(pool); // 打印写入信息
   };
@@ -107,7 +108,7 @@ auto main() -> int {
     for (int i = 0; i < n_read; i++) {
       int request_id, object_id; // NOLINT
       std::cin >> request_id >> object_id;
-      --object_id; // 转换为 0 索引
+      --object_id;                            // 转换为 0 索引
       tes.ReadRequest(request_id, object_id); // 读取请求
     }
   };
@@ -115,11 +116,11 @@ auto main() -> int {
   (std::cout << "OK\n").flush(); // 输出初始化完成信息
   // 主循环，处理每个时间片
   for (timeslice = 1; timeslice <= t + 105; timeslice++) {
-    sync();       // 同步时间片
-    delete_op();  // 处理删除操作
-    write_op();   // 处理写入操作
-    read_op();    // 处理读取操作
-    tes.Read();   // 执行读取操作
+    sync();                // 同步时间片
+    delete_op();           // 处理删除操作
+    write_op();            // 处理写入操作
+    read_op();             // 处理读取操作
+    tes.Read();            // 执行读取操作
     printer::PrintRead(n); // 打印读取信息
   }
 }

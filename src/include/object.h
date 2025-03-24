@@ -24,12 +24,12 @@ struct Object {
     valid_ = true; // 对象初始状态为有效
   }
 
-  bool valid_;                  // 对象是否有效
-  int id_;                      // 对象的唯一标识符
-  int tag_;                     // 对象的标签
-  int size_;                    // 对象的大小（块数）
-  std::array<int, 3> idisk_;    // 存储对象的副本所在的磁盘 ID（最多 3 个副本）
-  std::vector<int> tdisk_[3];   // 每个副本的块信息（块 ID 列表）
+  bool valid_;                // 对象是否有效
+  int id_;                    // 对象的唯一标识符
+  int tag_;                   // 对象的标签
+  int size_;                  // 对象的大小（块数）
+  std::array<int, 3> idisk_;  // 存储对象的副本所在的磁盘 ID（最多 3 个副本）
+  std::vector<int> tdisk_[3]; // 每个副本的块信息（块 ID 列表）
 };
 
 // 对象池类，用于管理对象的创建和访问
@@ -47,8 +47,9 @@ public:
   // - size: 对象的大小（块数）
   // 返回值：新对象的索引
   auto NewObject(int id, int tag, int size) -> int {
-    objs_.emplace_back(std::make_shared<Object>(id, tag, size)); // 创建新对象并存储
-    return size_++; // 返回新对象的索引
+    objs_.emplace_back(
+        std::make_shared<Object>(id, tag, size)); // 创建新对象并存储
+    return size_++;                               // 返回新对象的索引
   }
 
   // 获取指定索引的对象
@@ -72,6 +73,6 @@ public:
   void Drop(int oid) { objs_[oid]->valid_ = false; }
 
 private:
-  int size_{}; // 当前对象池中的对象数量
+  int size_{};                                // 当前对象池中的对象数量
   std::vector<std::shared_ptr<Object>> objs_; // 存储对象的共享指针列表
 };

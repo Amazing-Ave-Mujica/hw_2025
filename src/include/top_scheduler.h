@@ -23,17 +23,18 @@ public:
   TopScheduler(int *time, Scheduler *scheduler, ObjectPool *obj_pool,
                DiskManager *disk_mgr)
       : time_(time), scheduler_(scheduler), obj_pool_(obj_pool),
-        disk_mgr_(disk_mgr){};
+        disk_mgr_(disk_mgr) {};
 
   // 处理读取请求
   // 参数：
   // - tid: 读取任务的唯一标识符
   // - oid: 读取任务关联的对象 ID
   void ReadRequest(int tid, int oid) {
-    assert(oid >= 0); // 确保对象 ID 合法
-    assert(obj_pool_->IsValid(oid)); // 确保对象有效
+    assert(oid >= 0);                       // 确保对象 ID 合法
+    assert(obj_pool_->IsValid(oid));        // 确保对象有效
     auto object = obj_pool_->GetObjAt(oid); // 获取对象
-    scheduler_->NewTask(oid, std::make_unique<Task>(tid, oid, *time_)); // 创建新任务
+    scheduler_->NewTask(oid,
+                        std::make_unique<Task>(tid, oid, *time_)); // 创建新任务
 
     int x; // 选择的副本索引
     {
@@ -59,8 +60,8 @@ public:
   // 返回值：新对象的 ID
   auto InsertRequest(int id, int size, int tag) -> int {
     int oid = obj_pool_->NewObject(id, tag, size); // 创建新对象
-    assert(id == oid); // 确保对象 ID 一致
-    scheduler_->NewTaskMgr(oid, size); // 创建新的任务管理器
+    assert(id == oid);                             // 确保对象 ID 一致
+    scheduler_->NewTaskMgr(oid, size);             // 创建新的任务管理器
     for (int i = 0; i < 3; i++) {
       assert(disk_mgr_->Insert(oid, i)); // 将对象的副本插入磁盘
     }
@@ -97,8 +98,8 @@ public:
   }
 
 private:
-  int *time_;               // 指向全局时间片的指针
-  Scheduler *scheduler_;    // 调度器，用于管理任务
-  ObjectPool *obj_pool_;    // 对象池，用于管理对象
-  DiskManager *disk_mgr_;   // 磁盘管理器，用于管理磁盘操作
+  int *time_;             // 指向全局时间片的指针
+  Scheduler *scheduler_;  // 调度器，用于管理任务
+  ObjectPool *obj_pool_;  // 对象池，用于管理对象
+  DiskManager *disk_mgr_; // 磁盘管理器，用于管理磁盘操作
 };

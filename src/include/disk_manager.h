@@ -67,7 +67,7 @@ public:
             object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
             for (int j = 0; j < object->size_; j++) {
               auto block_id = disk.Write(oid, j); // 写入数据到磁盘
-              object->tdisk_[kth][j] = block_id; // 记录块 ID
+              object->tdisk_[kth][j] = block_id;  // 记录块 ID
               for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
                 auto ptr = seg_mgr_->FindBlock(i, od, block_id);
                 if (ptr != nullptr) {
@@ -100,10 +100,11 @@ public:
         }
         object->idisk_[kth] = od; // 设置副本所在磁盘
         for (int j = 0; j < object->size_; j++) {
-          object->tdisk_[kth][j] = disk.WriteBlock(ptr->disk_addr_, oid, j); // 写入数据到段
+          object->tdisk_[kth][j] =
+              disk.WriteBlock(ptr->disk_addr_, oid, j); // 写入数据到段
         }
         ptr->Write(object->size_); // 更新段信息
-        return true; // 写入成功
+        return true;               // 写入成功
       }
       return false; // 写入失败
     };
@@ -125,96 +126,103 @@ public:
   // - block_id: 块 ID
   void Delete(int tag, int disk_id, int block_id) {
     seg_mgr_->Delete(tag, disk_id, block_id); // 删除段信息
-    disks_[disk_id].Delete(block_id); // 删除磁盘块数据
+    disks_[disk_id].Delete(block_id);         // 删除磁盘块数据
   }
 
   // 从指定磁盘读取数据
   // 参数：
   // - disk_id: 磁盘 ID
-  void ReadSingle(int disk_id,int time){
+  void ReadSingle(int disk_id, int time) {
     auto &disk = disks_[disk_id];
     while (time > 0) {
-      const auto x = scheduler_->GetRT(disk_id, disk.itr_); // 获取调度器推荐的读取位置
+      const auto x =
+          scheduler_->GetRT(disk_id, disk.itr_); // 获取调度器推荐的读取位置
       if (x == -1) {
         break; // 如果没有推荐位置，退出
       }
       if (disk.itr_ == x) {
         break;
       }
-      {
-        int rd_cost = disk.ReadCost();
-        if (ReadDist(disk_id, x) <= 12 ) {
-          if(time >= rd_cost){
-            auto [oid, y] = disk.GetStorageAt(disk.itr_);
-            disk.Read(time); // 执行读取操作
-            printer::ReadAddRead(disk_id, 1); // 打印读取信息
-            if (oid >= 0) {
-              scheduler_->Update(oid, y); // 更新调度器信息
-            }
-          }else if(rd_cost>=64&&time>0){
-            disk.Pass(time); // 跳过当前块
-            printer::ReadAddPass(disk_id, 1); // 打印跳过信息
-          }else{
-            break;
+      int rd_cost = disk.ReadCost();
+      if (ReadDist(disk_id, x) <= 12) {
+        if (time >= rd_cost) {
+          auto [oid, y] = disk.GetStorageAt(disk.itr_);
+          disk.Read(time);                  // 执行读取操作
+          printer::ReadAddRead(disk_id, 1); // 打印读取信息
+          if (oid >= 0) {
+            scheduler_->Update(oid, y); // 更新调度器信息
           }
-        } else {
-          disk.Pass(time); // 跳过当前块
+        } else if (rd_cost >= 64 && time > 0) {
+          disk.Pass(time);                  // 跳过当前块
           printer::ReadAddPass(disk_id, 1); // 打印跳过信息
+        } else {
+          break;
         }
+      } else {
+        disk.Pass(time);                  // 跳过当前块
+        printer::ReadAddPass(disk_id, 1); // 打印跳过信息
       }
     }
   }
   void Read(int disk_id) {
     int time = life_; // 初始化读取时间
 
-    #ifdef SINGLE_READ_MODE
-    ReadSingle(disk_id,time);
-    #else
+#ifdef SINGLE_READ_MODE
+    ReadSingle(disk_id, time);
+#else
     auto &disk = disks_[disk_id];
 
     // 读取最近的 k 个任务，按距离升序存储
-    auto task_k = scheduler_->GetRTK(disk_id, disk.GetItr(), config::DISK_READ_FETCH_LEN);
+    auto task_k =
+        scheduler_->GetRTK(disk_id, disk.GetItr(), config::DISK_READ_FETCH_LEN);
 
     if (task_k.empty()) {
       return;
     }
-
+    auto [target, hot_cnt] = scheduler_->GetHotRT(disk_id);
     // 如果最近的任务都太远，就直接 jump
-    if (ReadDist(disk_id, task_k[0]) >= life_) {
-      int target = scheduler_->GetHotRT(disk_id);
-      disk.Jump(time, target); // 跳转到目标位置
+    if (ReadDist(disk_id, task_k[0]) >= life_ ||
+        hot_cnt - scheduler_->GetCntRT(disk_id, disk.itr_) >=
+            config::JUMP_THRESHOLD) {
+      disk.Jump(time, target);               // 跳转到目标位置
       printer::ReadSetJump(disk_id, target); // 打印跳转信息
       return;
     }
 
     /* 动态规划读取方案
-     * dp[i][j] 表示完成了前 i 个任务，读最后一个任务花费 val[j] 所用的最小总费用
+     * dp[i][j] 表示完成了前 i 个任务，读最后一个任务花费 val[j]
+     所用的最小总费用
      * val = {16, 19, 23, 28, 34, 42, 52, 64, 0x3f3f3f3f}
      * 如果不可能完成置为 -1
      * fr[i][j] 表示该状态从哪里转移过来
-      {cost, op} 表示从 dp[i - 1][cost] 转移过来，op 表示中间的空白块是 pass / read
-    */ 
+      {cost, op} 表示从 dp[i - 1][cost] 转移过来，op 表示中间的空白块是 pass /
+     read
+    */
 
     int task_cnt = task_k.size();
     // val.size() = 9
-    static const std::vector<int> val = {16, 19, 23, 28, 34, 42, 52, 64, life_ + 1};
+    static const std::vector<int> val = {16, 19, 23, 28,       34,
+                                         42, 52, 64, life_ + 1};
     // +1 是因为会有一个伪装任务
-    std::vector<std::vector<int>> dp(task_cnt + 1, std::vector<int>(val.size(), life_ + 1));
-    std::vector<std::vector<std::pair<int, int>>> fr(task_cnt + 1, std::vector<std::pair<int, int>>(val.size(), {-1, -1}));
+    std::vector<std::vector<int>> dp(task_cnt + 1,
+                                     std::vector<int>(val.size(), life_ + 1));
+    std::vector<std::vector<std::pair<int, int>>> fr(
+        task_cnt + 1, std::vector<std::pair<int, int>>(val.size(), {-1, -1}));
 
     /**
-    * @brief 计算穿过连续空白块的花费
-    * @param val_id 表示最近的读的花费为 val[x]
-    * @param len 表示空白块的长度
-    * @param op 表示 pass / read
-    */
-    static auto cross_empty_blank_cost = [](int val_id, int len, int op) -> int {
+     * @brief 计算穿过连续空白块的花费
+     * @param val_id 表示最近的读的花费为 val[x]
+     * @param len 表示空白块的长度
+     * @param op 表示 pass / read
+     */
+    static auto cross_empty_blank_cost = [](int val_id, int len,
+                                            int op) -> int {
       if (len <= 0) {
         return 0;
       }
       if (op == 0) {
         return len;
-      } 
+      }
       int sum = 0;
       while (val_id > 0 && len > 0) {
         sum += val[--val_id];
@@ -223,7 +231,7 @@ public:
       sum += len * val[0];
       return sum;
     };
-    
+
     // 磁盘上 x 块走到 y 块的距离
     auto two_block_dist = [disk](int x, int y) -> int {
       int siz = disk.capacity_;
@@ -234,23 +242,26 @@ public:
     // 先确定上一个时间片指针最终的状态
     {
       int val_id = static_cast<int>(val.size()) - 1;
-    if (disk.prev_is_rd_) {
-      for (auto i = 0; i < val.size() - 1; i++) {
-        if (disk.prev_rd_cost_ == val[i]) {
-          val_id = i;
-          break;
+      if (disk.prev_is_rd_) {
+        for (auto i = 0; i < val.size() - 1; i++) {
+          if (disk.prev_rd_cost_ == val[i]) {
+            val_id = i;
+            break;
+          }
         }
       }
-    }
 
-    // 在队列头添加一个伪任务
-    task_k.insert(task_k.begin(), disk.GetIterPre());//@ttao: 这里是不是应该是 disk.GetItr() -1
-    dp[0][val_id] = 0;
-  }
+      // 在队列头添加一个伪任务
+      task_k.insert(
+          task_k.begin(),
+          disk.GetIterPre()); //@ttao: 这里是不是应该是 disk.GetItr() -1
+      dp[0][val_id] = 0;
+    }
 
     auto update_dp = [&](int i, int val_id, int pre_val_id, int len, int op) {
       // 跳过空白块并且读了当前块
-      int res = dp[i - 1][pre_val_id] + cross_empty_blank_cost(pre_val_id, len, op) + val[val_id];
+      int res = dp[i - 1][pre_val_id] +
+                cross_empty_blank_cost(pre_val_id, len, op) + val[val_id];
       if (dp[i][val_id] > res && res <= life_) {
         dp[i][val_id] = res;
         fr[i][val_id] = {pre_val_id, op};
@@ -288,7 +299,7 @@ public:
     // path 记录每一段空白是怎么过来的
     std::vector<int> path;
     while (state.first > 0) {
-      auto ff =  fr[state.first][state.second];
+      auto ff = fr[state.first][state.second];
       path.push_back(ff.second);
       --state.first;
       state.second = ff.first;
@@ -296,12 +307,11 @@ public:
 
     // 一个也读不出来直接 jump
     if (path.empty()) {
-      int target = scheduler_->GetHotRT(disk_id);
-      disk.Jump(time, target); // 跳转到目标位置
+      disk.Jump(time, target);               // 跳转到目标位置
       printer::ReadSetJump(disk_id, target); // 打印跳转信息
       return;
     }
-    
+
     for (int i = 1; i <= task_cnt && !path.empty(); i++) {
       auto op = path.back();
       path.pop_back();
@@ -327,8 +337,8 @@ public:
     // 就算走不到下一个目标，也可以选择继续移动「方案选单」
     // @ todo
 
-    ReadSingle(disk_id,time);
-    #endif
+    ReadSingle(disk_id, time);
+#endif
   }
 
   // 计算从当前位置到目标位置的距离
@@ -353,10 +363,10 @@ public:
   }
 
 private:
-  const int disk_cnt_; // 磁盘数量
-  const int life_; // 磁盘生命周期
-  ObjectPool *obj_pool_; // 对象池
-  Scheduler *scheduler_; // 调度器
+  const int disk_cnt_;      // 磁盘数量
+  const int life_;          // 磁盘生命周期
+  ObjectPool *obj_pool_;    // 对象池
+  Scheduler *scheduler_;    // 调度器
   SegmentManager *seg_mgr_; // 段管理器
   std::vector<Disk> disks_; // 磁盘列表
 };

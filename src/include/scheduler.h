@@ -4,10 +4,10 @@
 #include "object.h"
 #include "printer.h"
 #include "task.h"
+#include <algorithm>
 #include <list>
 #include <memory>
 #include <set>
-#include <algorithm>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -31,7 +31,8 @@ void AddDeleteObject(TaskManager &t);
 class RTQ {
 private:
   void UpdateSum(int x, int v = 1) {
-    auto it = std::upper_bound(sum_.begin(), sum_.end(), std::make_pair(x, INT_MAX));
+    auto it = std::upper_bound(sum_.begin(), sum_.end(),
+                               std::make_pair(x, INT32_MAX));
     assert(it != sum_.begin());
     it = prev(it);
     it->second += v;
@@ -98,7 +99,7 @@ public:
   auto GetSize() -> int { return st_.size(); }
 
   // 得到最热门的块
-  auto GetHotBlock() -> int {
+  auto GetHotBlock() -> std::pair<int, int> {
     int mx = 0;
     int pos = 0;
     for (const auto &[x, y] : sum_) {
@@ -107,13 +108,22 @@ public:
         mx = y;
       }
     }
-    return Front(pos);
+    return {Front(pos), mx};
+  }
+
+  // 查询块查询次数
+  auto QueryBlockCnt(int pos) -> int {
+    auto it = std::upper_bound(sum_.begin(), sum_.end(),
+                               std::make_pair(pos, INT32_MAX));
+    assert(it != sum_.begin());
+    it = prev(it);
+    return it->second;
   }
 
 private:
   std::set<int> st_; // 使用有序集合维护块 ID，支持快速查找和删除
   std::vector<std::pair<int, int>> sum_; // 前缀和
-  std::unordered_map<int, int> cnt_; // 出现次数
+  std::unordered_map<int, int> cnt_;     // 出现次数
 };
 
 // 每个对象一个 TaskManager，用于管理对象的任务
@@ -191,9 +201,10 @@ public:
   // - obj_pool: 对象池，用于管理对象
   // - N: 磁盘数量
   // - T: 时间片数量
-  explicit Scheduler(ObjectPool *obj_pool, int N, int T, int V) : obj_pool_(obj_pool) {
+  explicit Scheduler(ObjectPool *obj_pool, int N, int T, int V)
+      : obj_pool_(obj_pool) {
     task_mgr_.reserve(T + 105); // 预留任务管理器的空间
-    q_.resize(N, (RTQ){V});           // 初始化每个磁盘的读取队列
+    q_.resize(N + N, (RTQ){V}); // 初始化每个磁盘的读取队列
   }
 
   // 创建新的任务管理器
@@ -210,7 +221,7 @@ public:
   // - oid: 对象 ID
   // - ptr: 指向任务的智能指针
   void NewTask(int oid, std::unique_ptr<Task> ptr) {
-    assert(oid < task_mgr_.size()); // 确保对象 ID 合法
+    assert(oid < task_mgr_.size());         // 确保对象 ID 合法
     task_mgr_[oid].NewTask(std::move(ptr)); // 添加任务到对应的任务管理器
   }
 
@@ -235,8 +246,12 @@ public:
   }
 
   // 跳的时候获取最热门的块
-  auto GetHotRT(int disk_id) -> int {
+  auto GetHotRT(int disk_id) -> std::pair<int, int> {
     return q_[disk_id].GetHotBlock();
+  }
+
+  auto GetCntRT(int disk_id, int pos) -> int {
+    return q_[disk_id].QueryBlockCnt(pos);
   }
 
   // 获取指定磁盘的读取队列大小
@@ -257,7 +272,7 @@ public:
       }
     }
     printer::AddDeleteObject(task_mgr_[oid]); // 打印删除的对象
-    task_mgr_[oid].Clear(); // 清空任务管理器
+    task_mgr_[oid].Clear();                   // 清空任务管理器
   }
 
   // 更新任务状态
@@ -277,7 +292,7 @@ public:
   }
 
   // 获取磁盘读任务的分布，用于读调度器使用
-  
+
 private:
   /*
     需要一个数据结构来给每个磁盘单独维护读队列

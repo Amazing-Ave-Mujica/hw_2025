@@ -18,11 +18,10 @@ private:
   int l_;                                // 资源超额阈值
   std::vector<int> r_;                   // 每种资源的总量
   std::vector<std::vector<int>> best_x_; // 最优分配方案
-  db best_penalty_;                  // 最优惩罚值
+  db best_penalty_;                      // 最优惩罚值
   // 惩罚系数
-  db beta_,gama_;                             // 超额部分惩罚系数
+  db beta_, gama_;                     // 超额部分惩罚系数
   std::vector<std::vector<db>> alpha_; // 资源混合惩罚系数
-  
 
   // 随机数生成器
   std::mt19937 rng_;
@@ -41,7 +40,7 @@ private:
       // 计算超额惩罚项
       for (int i = 0; i < m_; ++i) {
         int s_ij = std::max(0, x[i][j] - l_);
-        penalty += beta_ * s_ij*s_ij;
+        penalty += beta_ * s_ij * s_ij;
       }
     }
     return penalty;
@@ -50,59 +49,63 @@ private:
   // **初始化可行解**
   auto InitializeSolution() -> std::vector<std::vector<int>> {
     std::vector<std::vector<int>> x(m_, std::vector<int>(n_, 0));
-    std::vector<int> remaining_r = r_;  // 记录每种资源剩余可分配数量
-    std::vector<int> remaining_v(n_, v_);  // 记录每个容器剩余容量
+    std::vector<int> remaining_r = r_;    // 记录每种资源剩余可分配数量
+    std::vector<int> remaining_v(n_, v_); // 记录每个容器剩余容量
 
-    std::uniform_int_distribution<int>dist_m(0,m_-1), dist_n(0,n_-1);//NOLINT
-  
+    std::uniform_int_distribution<int> dist_m(0, m_ - 1),
+        dist_n(0, n_ - 1); // NOLINT
+
     // **第一步：均匀分配资源，保证 r[i] 约束**
     for (int i = 0; i < m_; ++i) {
       while (remaining_r[i] > 0) {
-          int j = dist_n(rng_);  // 随机选择容器
-          if (remaining_v[j] > 0) {  // 容器仍有可用容量
-              int allocate_amount = std::min({remaining_r[i], remaining_v[j], 1});
-              x[i][j] += allocate_amount;
-              remaining_r[i] -= allocate_amount;
-              remaining_v[j] -= allocate_amount;
-          }
+        int j = dist_n(rng_);     // 随机选择容器
+        if (remaining_v[j] > 0) { // 容器仍有可用容量
+          int allocate_amount = std::min({remaining_r[i], remaining_v[j], 1});
+          x[i][j] += allocate_amount;
+          remaining_r[i] -= allocate_amount;
+          remaining_v[j] -= allocate_amount;
+        }
       }
     }
     // **第二步：调整，使得每个容器正好填满 v**
     for (int j = 0; j < n_; ++j) {
-        int sum = 0;
-        for (int i = 0; i < m_; ++i) {
-            sum += x[i][j];
-        }
-        int diff = sum - v_;
+      int sum = 0;
+      for (int i = 0; i < m_; ++i) {
+        sum += x[i][j];
+      }
+      int diff = sum - v_;
 
-        while (diff != 0) {
-            int i = dist_m(rng_);
-            if (diff > 0 && x[i][j] > 0) {  // 超配，减少
-                int adjust = std::min(diff, x[i][j]);
-                x[i][j] -= adjust;
-                diff -= adjust;
-            } else if (diff < 0 && remaining_r[i] > 0) {  // 少配，增加
-                int adjust = std::min(-diff, remaining_r[i]);
-                x[i][j] += adjust;
-                remaining_r[i] -= adjust;
-                diff += adjust;
-            }
+      while (diff != 0) {
+        int i = dist_m(rng_);
+        if (diff > 0 && x[i][j] > 0) { // 超配，减少
+          int adjust = std::min(diff, x[i][j]);
+          x[i][j] -= adjust;
+          diff -= adjust;
+        } else if (diff < 0 && remaining_r[i] > 0) { // 少配，增加
+          int adjust = std::min(-diff, remaining_r[i]);
+          x[i][j] += adjust;
+          remaining_r[i] -= adjust;
+          diff += adjust;
         }
+      }
     }
     // AdjustSolution(x);
     return x;
   }
+
 public:
   // **构造函数**
   AnnealOptimizer(int m, int n, int v, int l, const std::vector<int> &r,
-                    const std::vector<std::vector<db>> &alpha,
-                    db beta=config::BETA_VALUE,db gama=config::GAMA_VALUE)
-      : m_(m), n_(n), v_(v), l_(l), r_(r), alpha_(alpha), beta_(beta),gama_(gama),
-        best_penalty_(std::numeric_limits<db>::max()),
+                  const std::vector<std::vector<db>> &alpha,
+                  db beta = config::BETA_VALUE, db gama = config::GAMA_VALUE)
+      : m_(m), n_(n), v_(v), l_(l), r_(r), alpha_(alpha), beta_(beta),
+        gama_(gama), best_penalty_(std::numeric_limits<db>::max()),
         rng_(config::RANDOM_SEED) {}
 
   // **执行模拟退火优化**
-  auto Solve(bool iscerr=false,db T=config::T, db coolingRate=config::COOLING_RATE, int maxIter=config::MAX_ITER) -> void {
+  auto Solve(bool iscerr = false, db T = config::T,
+             db coolingRate = config::COOLING_RATE,
+             int maxIter = config::MAX_ITER) -> void {
     std::vector<std::vector<int>> x = InitializeSolution();
     db e_cur = ComputePenalty(x);
     best_x_ = x;
@@ -113,16 +116,17 @@ public:
 
     for (int iter = 0; iter < maxIter; ++iter) {
       std::vector<std::vector<int>> x_new = x;
-      int i1=dist_m(rng_);
-      int i2=dist_m(rng_);
-      int j1=dist_n(rng_);
-      int j2=dist_n(rng_);
-      std::uniform_int_distribution<int>dist_r(0,std::min(x[i2][j1],x[i1][j2]));
-      int delta=dist_r(rng_);
-      x_new[i1][j1]+=delta;
-      x_new[i2][j1]-=delta;
-      x_new[i2][j2]+=delta;
-      x_new[i1][j2]-=delta;
+      int i1 = dist_m(rng_);
+      int i2 = dist_m(rng_);
+      int j1 = dist_n(rng_);
+      int j2 = dist_n(rng_);
+      std::uniform_int_distribution<int> dist_r(0,
+                                                std::min(x[i2][j1], x[i1][j2]));
+      int delta = dist_r(rng_);
+      x_new[i1][j1] += delta;
+      x_new[i2][j1] -= delta;
+      x_new[i2][j2] += delta;
+      x_new[i1][j2] -= delta;
 
       // **计算新解的惩罚值**
       db e_new = ComputePenalty(x_new);
@@ -140,66 +144,72 @@ public:
       }
       // **温度衰减**
       T *= coolingRate;
-      
+
       // **终止条件**
       if (T < config::EPS_T) {
-        #ifdef ISCERR
-        {std::cerr<<"epoch="<<iter<<'\n';}
-        #endif
+#ifdef ISCERR
+        {
+          std::cerr << "epoch=" << iter << '\n';
+        }
+#endif
         break;
       }
     }
     //**调整最后的资源**
     // AdjustSolution(best_x_);
   }
-  
+
   // **获取最优解**
-  auto GetBestSolution(bool iscerr=false) const -> std::vector<std::vector<int>> {
-    #ifdef ISCERR
-      std::vector<int>c(n_,0),r(m_,0);//NOLINT
-      std::cerr << "Minimum penalty: " << best_penalty_ << '\n';
-      std::cerr << "Optimal allocation:\n";
-      for (int i = 0; i < m_; ++i) {
-        std::cerr << "Resource " << i + 1 << ": ";
-        for (int j = 0; j < n_; ++j) {
-          std::cerr << best_x_[i][j] << " ";
-          c[j]+=best_x_[i][j];
-          r[i]+=best_x_[i][j];
-        }
-        std::cerr << '\n';
+  auto GetBestSolution(bool iscerr = false) const
+      -> std::vector<std::vector<int>> {
+#ifdef ISCERR
+    std::vector<int> c(n_, 0), r(m_, 0); // NOLINT
+    std::cerr << "Minimum penalty: " << best_penalty_ << '\n';
+    std::cerr << "Optimal allocation:\n";
+    for (int i = 0; i < m_; ++i) {
+      std::cerr << "Resource " << i + 1 << ": ";
+      for (int j = 0; j < n_; ++j) {
+        std::cerr << best_x_[i][j] << " ";
+        c[j] += best_x_[i][j];
+        r[i] += best_x_[i][j];
       }
-      for(int i=0;i<n_;i++) {assert(c[i]==v_);}
-      for(int i=0;i<m_;i++) {assert(r[i]==r_[i]);}
-      for(int i=0;i<m_;i++){
-        for(int j=0;j<m_;j++){
-          std::cerr<<alpha_[i][j]<<' ';
-        }
-        std::cerr<<'\n';
+      std::cerr << '\n';
+    }
+    for (int i = 0; i < n_; i++) {
+      assert(c[i] == v_);
+    }
+    for (int i = 0; i < m_; i++) {
+      assert(r[i] == r_[i]);
+    }
+    for (int i = 0; i < m_; i++) {
+      for (int j = 0; j < m_; j++) {
+        std::cerr << alpha_[i][j] << ' ';
       }
-    #endif
+      std::cerr << '\n';
+    }
+#endif
     return best_x_;
   }
 };
 
-
 //----------------------------------------------------------------
 // *********************遗传算法优化器**************************
 //----------------------------------------------------------------
-constexpr int K_POP_SIZE = config::K_POP_SIZE;       // 种群大小
+constexpr int K_POP_SIZE = config::K_POP_SIZE;      // 种群大小
 constexpr int K_MAX_GEN = config::K_MAX_GEN;        // 最大迭代次数
-constexpr db K_CROSS_RATE = config::K_CROSS_RATE; // 交叉概率
+constexpr db K_CROSS_RATE = config::K_CROSS_RATE;   // 交叉概率
 constexpr db K_MUTATE_RATE = config::K_MUTATE_RATE; // 变异概率
-constexpr int ELITE_NUM=config::ELITE_NUM;//精英个体数量
+constexpr int ELITE_NUM = config::ELITE_NUM;        // 精英个体数量
 
 struct Individual {
   std::vector<std::vector<int>> allocation_; // 资源分配方案 (m × n 矩阵)
-  db fitness_;                           // 适应度（即总惩罚值）
+  db fitness_;                               // 适应度（即总惩罚值）
 };
 
 class GeneticOptimizer {
 private:
   const int m_, n_, v_, l_;
-  const db beta_,gama_;
+  const db beta_, gama_;
   std::vector<int> r_;
   const std::vector<std::vector<db>> alpha_;
   std::vector<Individual> population_;
@@ -222,8 +232,8 @@ private:
     for (int j = 0; j < n_; ++j) {
       for (int i = 0; i < m_; ++i) {
         // int excess = x[i][j]-l_;
-        int excess = std::max(0,x[i][j] - l_);
-        penalty += beta_ * excess*excess;
+        int excess = std::max(0, x[i][j] - l_);
+        penalty += beta_ * excess * excess;
       }
     }
     /*正则项，保证每个磁盘的资源分配均匀
@@ -236,14 +246,14 @@ private:
       penalty+=gama_*excess*excess;
     }
       */
-    //正则项，保证每种资源分配靠近r[i]  
-    for(int i=0;i<m_;i++){
-      int count_in_resource=0;
-      for(int j=0;j<n_;j++){
-        count_in_resource+=x[i][j];
+    // 正则项，保证每种资源分配靠近r[i]
+    for (int i = 0; i < m_; i++) {
+      int count_in_resource = 0;
+      for (int j = 0; j < n_; j++) {
+        count_in_resource += x[i][j];
       }
       int excess = count_in_resource - r_[i];
-      penalty+=gama_*excess*excess;
+      penalty += gama_ * excess * excess;
     }
     return penalty;
   }
@@ -252,19 +262,21 @@ private:
   auto InitializePopulation() -> void {
     for (int p = 0; p < K_POP_SIZE; ++p) {
       Individual indiv;
-      indiv.allocation_ = std::vector<std::vector<int>>(m_, std::vector<int>(n_, 0));
+      indiv.allocation_ =
+          std::vector<std::vector<int>>(m_, std::vector<int>(n_, 0));
       std::vector<int> remaining = r_; // 剩余资源
 
       // 随机分配资源
       for (int i = 0; i < m_; ++i) {
         std::vector<int> indices(n_);
-        //打乱顺序
+        // 打乱顺序
         iota(indices.begin(), indices.end(), 0);
         std::shuffle(indices.begin(), indices.end(), rng_);
         for (int _ = 0; _ < n_; ++_) {
           int j = indices[_];
           if (remaining[i] > 0) {
-            std::uniform_int_distribution<int> dist(0, std::min(remaining[i], v_));
+            std::uniform_int_distribution<int> dist(0,
+                                                    std::min(remaining[i], v_));
             int allocation = dist(rng_);
             indiv.allocation_[i][j] = allocation;
             remaining[i] -= allocation;
@@ -296,7 +308,7 @@ private:
     // 计算总适应度的倒数（适应度越小越好）
     db total_fitness = 0.0;
     for (const auto &indiv : population_) {
-        total_fitness += 1.0 / indiv.fitness_; // 使用适应度的倒数作为概率权重
+      total_fitness += 1.0 / indiv.fitness_; // 使用适应度的倒数作为概率权重
     }
 
     // 生成一个 [0, total_fitness] 范围内的随机数
@@ -306,25 +318,26 @@ private:
     // 遍历种群，找到对应的个体
     db cumulative_fitness = 0.0;
     for (const auto &indiv : population_) {
-        cumulative_fitness += 1.0 / indiv.fitness_;
-        if (cumulative_fitness >= rand_value) {
-            return indiv; // 返回被选中的个体
-        }
+      cumulative_fitness += 1.0 / indiv.fitness_;
+      if (cumulative_fitness >= rand_value) {
+        return indiv; // 返回被选中的个体
+      }
     }
 
     // 如果没有找到（理论上不会发生），返回最后一个个体
     return population_.back();
   }
   // 交叉操作
-  auto Crossover(const Individual &parent1, const Individual &parent2) -> Individual {
-    std::uniform_real_distribution<db>dist(0.0,1.0);
+  auto Crossover(const Individual &parent1, const Individual &parent2)
+      -> Individual {
+    std::uniform_real_distribution<db> dist(0.0, 1.0);
     Individual offspring = parent1;
 
-    for(int i=0;i<n_;i++){
+    for (int i = 0; i < n_; i++) {
       db crossover_point = dist(rng_);
-      if(crossover_point<K_CROSS_RATE){
-        for(int j=0;j<m_;j++){
-          offspring.allocation_[j][i]=parent2.allocation_[j][i];
+      if (crossover_point < K_CROSS_RATE) {
+        for (int j = 0; j < m_; j++) {
+          offspring.allocation_[j][i] = parent2.allocation_[j][i];
         }
       }
     }
@@ -337,55 +350,57 @@ private:
   auto Mutate(Individual &indiv) -> void {
     std::uniform_int_distribution<int> dist_m(0, m_ - 1);
     std::uniform_int_distribution<int> dist_n(0, n_ - 1);
-    std::uniform_real_distribution<db>dist_mutate(0.0,1.0);
+    std::uniform_real_distribution<db> dist_mutate(0.0, 1.0);
 
     if (dist_mutate(rng_) < K_MUTATE_RATE) {
       int i1 = dist_m(rng_);
       int i2 = dist_m(rng_);
       int j = dist_n(rng_);
-      while(i1==i2){
-        i2=dist_m(rng_);
+      while (i1 == i2) {
+        i2 = dist_m(rng_);
       }
 
-      std::uniform_int_distribution<int> dist_v(0,indiv.allocation_[i2][j]);
+      std::uniform_int_distribution<int> dist_v(0, indiv.allocation_[i2][j]);
       int delta = dist_v(rng_);
       indiv.allocation_[i1][j] += delta;
-      indiv.allocation_[i2][j] -= delta; 
+      indiv.allocation_[i2][j] -= delta;
     }
 
     indiv.fitness_ = ComputePenalty(indiv.allocation_);
   }
   // **调整资源分配，使得每个容器的资源分配为v**
-  auto AdjustSolution(std::vector<std::vector<int>>&best_x_)->void{
+  auto AdjustSolution(std::vector<std::vector<int>> &best_x_) -> void {
     std::uniform_int_distribution<int> dist_m(0, m_ - 1);
-    for(int i=0;i<n_;i++){
-      int delta=-v_;
-      for(int j=0;j<m_;j++){
-        delta+=best_x_[j][i];
+    for (int i = 0; i < n_; i++) {
+      int delta = -v_;
+      for (int j = 0; j < m_; j++) {
+        delta += best_x_[j][i];
       }
-      while(delta!=0){
-        int j=dist_m(rng_);
-        if(delta>0){
-          int d=std::min(delta,best_x_[j][i]);
-          best_x_[j][i]-=d;
-          delta-=d;
-        }else{
-          best_x_[j][i]-=delta;
-          delta=0;
+      while (delta != 0) {
+        int j = dist_m(rng_);
+        if (delta > 0) {
+          int d = std::min(delta, best_x_[j][i]);
+          best_x_[j][i] -= d;
+          delta -= d;
+        } else {
+          best_x_[j][i] -= delta;
+          delta = 0;
         }
       }
     }
   }
+
 public:
   GeneticOptimizer(int m, int n, int v, int l, std::vector<int> r,
-                   std::vector<std::vector<db>> alpha, db beta=config::BETA_VALUE,db gama=config::GAMA_VALUE,
+                   std::vector<std::vector<db>> alpha,
+                   db beta = config::BETA_VALUE, db gama = config::GAMA_VALUE,
                    int seed = config::RANDOM_SEED)
       : m_(m), n_(n), v_(v), l_(l), r_(std::move(r)), alpha_(std::move(alpha)),
-        beta_(beta),gama_(gama),rng_(seed) {}
+        beta_(beta), gama_(gama), rng_(seed) {}
 
   auto Solve(bool cerr = false) -> void {
     InitializePopulation();
-    assert(ELITE_NUM<K_POP_SIZE);
+    assert(ELITE_NUM < K_POP_SIZE);
     for (int gen = 0; gen < K_MAX_GEN; ++gen) {
       std::vector<Individual> new_population;
 
@@ -398,11 +413,12 @@ public:
       for (int i = 0; i < ELITE_NUM; ++i) {
         new_population.push_back(population_[i]); // 保留前三个个体
       }
-  
+
       // **选择 + 交叉 + 变异**
-      for (int i = ELITE_NUM; i < K_POP_SIZE; ++i) { // 从第4个位置开始填充新种群
-        Individual parent1=RouletteWheelSelection();
-        Individual parent2=RouletteWheelSelection();
+      for (int i = ELITE_NUM; i < K_POP_SIZE;
+           ++i) { // 从第4个位置开始填充新种群
+        Individual parent1 = RouletteWheelSelection();
+        Individual parent2 = RouletteWheelSelection();
         Individual offspring = Crossover(parent1, parent2);
         Mutate(offspring);
         new_population.push_back(offspring);
@@ -417,44 +433,46 @@ public:
         for (const auto &indiv : population_) {
           best_fitness = std::min(best_fitness, indiv.fitness_);
         }
-        #ifdef ISCERR
-          std::cerr << "Generation " << gen << " Best Fitness: " << best_fitness << '\n';
-        #endif
+#ifdef ISCERR
+        std::cerr << "Generation " << gen << " Best Fitness: " << best_fitness
+                  << '\n';
+#endif
       }
     }
   }
 
-  auto GetBestSolution(bool iscerr=false) -> std::vector<std::vector<int>> {
+  auto GetBestSolution(bool iscerr = false) -> std::vector<std::vector<int>> {
     Individual best = population_[0];
     for (const auto &indiv : population_) {
       if (indiv.fitness_ < best.fitness_) {
         best = indiv;
       }
     }
-    // AdjustSolution(best.allocation_);
-    #ifdef ISCERR
-      std::vector<int>c(n_,0);;
-      std::cerr << "Optimal Solution (Penalty: " << best.fitness_ << "):\n";
-      for (int i = 0; i < m_; ++i) {
-        std::cerr << "Resource " << i + 1 << ": ";
-        for (int j = 0; j < n_; ++j) {
-          std::cerr << best.allocation_[i][j] << " ";
-          c[j]+=best.allocation_[i][j];
-        }
-        std::cerr << '\n';
+// AdjustSolution(best.allocation_);
+#ifdef ISCERR
+    std::vector<int> c(n_, 0);
+    ;
+    std::cerr << "Optimal Solution (Penalty: " << best.fitness_ << "):\n";
+    for (int i = 0; i < m_; ++i) {
+      std::cerr << "Resource " << i + 1 << ": ";
+      for (int j = 0; j < n_; ++j) {
+        std::cerr << best.allocation_[i][j] << " ";
+        c[j] += best.allocation_[i][j];
       }
-      for(int i=0;i<n_;i++){
-        std::cerr<<c[i]<<' ';
-      }
-      std::cerr<<'\n';
-    #endif
+      std::cerr << '\n';
+    }
+    for (int i = 0; i < n_; i++) {
+      std::cerr << c[i] << ' ';
+    }
+    std::cerr << '\n';
+#endif
     return best.allocation_;
   }
 };
-using ResourceAllocator=AnnealOptimizer;
+using ResourceAllocator = AnnealOptimizer;
 // using ResourceAllocator=GeneticOptimizer;
 /*
-baseline:AnnealOptimizer 
+baseline:AnnealOptimizer
 gama=10 Minimum penalty: 1.55361e+08
 gama=1 Minimum penalty: 1.50868e+08
 
