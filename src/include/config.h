@@ -6,8 +6,8 @@ namespace config {
 // #define LLDB
 // #define SINGLE_READ_MODE
 #define ISCERR
-#define USINGTSP      // 是否使用TSP
-#define WRITE_BALANCE // 是否按照磁盘剩余空间排序
+// #define USINGTSP      // 是否使用TSP
+// #define WRITE_BALANCE // 是否按照磁盘剩余空间排序
 
 static constexpr int RANDOM_SEED = 0; // 随机数种子
 static constexpr int MAX_M = 16;      // 资源种类数
@@ -31,8 +31,8 @@ static constexpr db K_MUTATE_RATE = 0.05; // 变异概率
 static constexpr int ELITE_NUM = 10;      // 精英个体数量
 
 static constexpr int DISK_READ_FETCH_LEN = 63; // 规划最近的读取任务个数
-static constexpr int RTQ_DISK_PART_SIZE = 450; // RTQ 给磁盘分区大小
-static constexpr int JUMP_THRESHOLD = 450; // 热门块比当前块大多少时直接跳转
+int RTQ_DISK_PART_SIZE; // RTQ 给磁盘分区大小 NOLINT
+int JUMP_THRESHOLD; // 热门块比当前块大多少时直接跳转 NOLINT
 
 static constexpr db INF = 1e18; // 无穷大
 } // namespace config
