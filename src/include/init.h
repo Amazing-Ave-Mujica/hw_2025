@@ -48,12 +48,12 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
   // 计算资源分配
   for (int i = 0; i < m; i++) {
     if (i < m - 1) {
-      resource[i] = static_cast<int>(1.0 * max_allocate[i] * (n * v) /
+      resource[i] = static_cast<int>((1.0/3.0) * max_allocate[i] * (n * v) /
                                      std::accumulate(max_allocate.begin(),
                                                      max_allocate.end(),
                                                      0)); // 按比例分配资源
     } else {
-      resource[i] = n * v - std::accumulate(resource.begin(), resource.end(),
+      resource[i] = n * (v/3) - std::accumulate(resource.begin(), resource.end(),
                                             0); // 剩余资源分配给最后一个标签
     }
   }
@@ -76,7 +76,7 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
   }
 
   // 初始化资源分配器并求解
-  ResourceAllocator ra(m, n, v, v / m, resource, alpha);
+  ResourceAllocator ra(m, n, v/3, v / m, resource, alpha);
   ra.Solve(ISCERR);
   return {ra.GetBestSolution(ISCERR), alpha};
 }
