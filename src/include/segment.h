@@ -1,9 +1,6 @@
 #include "config.h"
-#include "data.h"
-#include "tsp.h"
 #include <algorithm>
 #include <cassert>
-#include <cstdint>
 #include <list>
 #include <vector>
 

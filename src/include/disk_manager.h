@@ -2,7 +2,6 @@
 
 #include "config.h"
 #include "disk.h"
-#include "disk_manager.h"
 #include "object.h"
 #include "printer.h"
 #include "scheduler.h"
@@ -140,10 +139,10 @@ public:
     };
 
     // 优先按段写入，如果失败则按块写入
-    if (write_by_segment_whole()) {
+    if (kth == 0 && write_by_segment_whole()) {
       return true;
     }
-    if (write_by_segment()) {
+    if (kth == 0 && write_by_segment()) {
       return true;
     }
     if (write_by_block()) {

@@ -46,6 +46,9 @@ public:
       });
       x = v[0]; // 选择压力最小的副本
     }
+   
+    x = 0;
+
     int disk = object->idisk_[x]; // 获取选择的磁盘 ID
     for (int i = 0; i < object->size_; i++) {
       scheduler_->PushRTQ(disk, object->tdisk_[x][i]); // 将块 ID 添加到读取队列
