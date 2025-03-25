@@ -32,7 +32,22 @@ static constexpr int ELITE_NUM = 10;      // 精英个体数量
 
 static constexpr int DISK_READ_FETCH_LEN = 63; // 规划最近的读取任务个数
 int RTQ_DISK_PART_SIZE; // RTQ 给磁盘分区大小 NOLINT
-int JUMP_THRESHOLD; // 热门块比当前块大多少时直接跳转 NOLINT
+int JUMP_THRESHOLD;     // 热门块比当前块大多少时直接跳转 NOLINT
 
 static constexpr db INF = 1e18; // 无穷大
+
+constexpr bool USE_COMPACT = true;
+
+enum WRITEPOLICIES {
+  none = 0, // 默认策略
+  compact   // 只在硬盘的前1/3读数据
+};
+
+constexpr auto WritePolicy() {
+  if (USE_COMPACT) {
+    return WRITEPOLICIES::compact;
+  }
+  return WRITEPOLICIES::none;
+};
+
 } // namespace config

@@ -45,37 +45,54 @@ public:
   // - kth: 副本编号
   // 返回值：是否插入成功
   auto Insert(int oid, int kth) -> bool {
+    static std::mt19937 rng(config::RANDOM_SEED);
     auto object = obj_pool_->GetObjAt(oid); // 获取对象
 
     // 随机打乱磁盘顺序
     std::vector<int> sf(disks_.size());
     std::iota(sf.begin(), sf.end(), 0);
-    std::mt19937 rng(config::RANDOM_SEED);
     std::shuffle(sf.begin(), sf.end(), rng);
 
     // 按块写入数据
     auto write_by_block = [&]() {
       for (auto od : sf) {
         auto &disk = disks_[od];
-        if (disk.free_size_ >= object->size_) { // 检查磁盘是否有足够空间
-          bool exist = false;
-          for (int i = 0; i < kth; i++) {
-            exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
+
+        if constexpr (config::WritePolicy() == config::compact) {
+          if (disk.free_size_ - seg_mgr_->FreeBlockSize(od) < object->size_) {
+            continue;
           }
-          if (!exist) {
-            object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
-            for (int j = 0; j < object->size_; j++) {
-              auto block_id = disk.Write(oid, j); // 写入数据到磁盘
-              object->tdisk_[kth][j] = block_id;  // 记录块 ID
+        } else if constexpr (config::WritePolicy() == config::none) {
+          if (disk.free_size_ < object->size_) {
+            continue;
+          }
+        } else {
+          assert(false);
+        }
+        bool exist = false;
+        for (int i = 0; i < kth; i++) {
+          exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
+        }
+        if (!exist) {
+          object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
+          for (int j = 0; j < object->size_; j++) {
+            if (config::WritePolicy() == config::compact) {
+              auto block_id = disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od],
+                                              oid, j); // 写入数据到磁盘
+              object->tdisk_[kth][j] = block_id;       // 记录块 ID
+            } else {
+              auto block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
+              object->tdisk_[kth][j] = block_id;          // 记录块 ID
               for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
                 auto ptr = seg_mgr_->FindBlock(i, od, block_id);
                 if (ptr != nullptr) {
-                  ptr->Write(1); // 更新段信息
+                  assert(false);
+                  seg_mgr_->Write(ptr, 1); // 更新段信息
                 }
               }
             }
-            return true; // 写入成功
           }
+          return true; // 写入成功
         }
       }
       return false; // 写入失败
@@ -102,8 +119,8 @@ public:
           object->tdisk_[kth][j] =
               disk.WriteBlock(ptr->disk_addr_, oid, j); // 写入数据到段
         }
-        ptr->Write(object->size_); // 更新段信息
-        return true;               // 写入成功
+        seg_mgr_->Write(ptr, object->size_); // 更新段信息
+        return true;                         // 写入成功
       }
       return false; // 写入失败
     };
@@ -132,8 +149,8 @@ public:
         for (int j = 0; j < object->size_; j++) {
           object->tdisk_[kth][j] = disk.WriteBlock(pos, oid, j); // 写入数据到段
         }
-        ptr->Write(object->size_); // 更新段信息
-        return true;               // 写入成功
+        seg_mgr_->Write(ptr, object->size_); // 更新段信息
+        return true;                         // 写入成功
       }
       return false; // 写入失败
     };
@@ -213,9 +230,11 @@ public:
     }
     auto [target, hot_cnt] = scheduler_->GetHotRT(disk_id);
     // 如果最近的任务都太远，就直接 jump
-    if (ReadDist(disk_id, task_k[0]) >= life_ ||ReadDist(disk_id, task_k[0])>=config::DISK_READ_FETCH_LEN/3||
+    if (ReadDist(disk_id, task_k[0]) >= life_ ||
+        ReadDist(disk_id, task_k[0]) >= config::DISK_READ_FETCH_LEN / 3 ||
         hot_cnt - scheduler_->GetCntRT(disk_id, disk.itr_) >=
-            config::JUMP_THRESHOLD&&ReadDist(disk_id, task_k[0])>=config::DISK_READ_FETCH_LEN/10) {
+                config::JUMP_THRESHOLD &&
+            ReadDist(disk_id, task_k[0]) >= config::DISK_READ_FETCH_LEN / 10) {
       disk.Jump(time, target);               // 跳转到目标位置
       printer::ReadSetJump(disk_id, target); // 打印跳转信息
       return;

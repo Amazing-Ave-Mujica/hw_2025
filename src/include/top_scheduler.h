@@ -1,3 +1,4 @@
+#include "config.h"
 #include "disk_manager.h"
 #include "object.h"
 #include "scheduler.h"
@@ -37,7 +38,7 @@ public:
                         std::make_unique<Task>(tid, oid, *time_)); // 创建新任务
 
     int x; // 选择的副本索引
-    {
+    if constexpr (config::WritePolicy() == config::none) {
       std::vector<int> v{0, 1, 2}; // 副本索引列表
       // 根据磁盘压力排序，选择压力最小的磁盘
       std::sort(v.begin(), v.end(), [&](int x, int y) {
@@ -45,10 +46,9 @@ public:
                disk_mgr_->GetStress(object->idisk_[y], object->tdisk_[y][0]);
       });
       x = v[0]; // 选择压力最小的副本
+    } else if constexpr (config::WritePolicy() == config::compact) {
+      x = 0;
     }
-   
-    x = 0;
-
     int disk = object->idisk_[x]; // 获取选择的磁盘 ID
     for (int i = 0; i < object->size_; i++) {
       scheduler_->PushRTQ(disk, object->tdisk_[x][i]); // 将块 ID 添加到读取队列

@@ -47,6 +47,7 @@ public:
 class SegmentManager {
 public:
   std::vector<std::list<Segment>> segs_; // 每个标签对应的段列表
+  std::vector<int> seg_disk_capacity_, seg_disk_size_;
 
   using data_t = std::vector<std::vector<int>>; // 数据类型，用于初始化段
 
@@ -58,7 +59,7 @@ public:
   // - t: 每个标签在每个磁盘上的初始分配
   SegmentManager(int M, int N, int V, const data_t &t,
                  const std::vector<std::vector<int>> &tsp)
-      : segs_(M) {
+      : segs_(M), seg_disk_capacity_(N), seg_disk_size_(N) {
     for (int i = 0; i < N; i++) {   // 遍历每个磁盘
       int addr = 0;                 // 当前磁盘的起始地址
       int rem = V;                  // 当前磁盘的剩余容量
@@ -70,6 +71,7 @@ public:
         rem -= cur;                 // 更新剩余容量
         addr += cur;                // 更新起始地址
       }
+      seg_disk_capacity_[i] = addr;
     }
   }
 
@@ -110,6 +112,14 @@ public:
     return nullptr; // 没有找到包含指定块的段
   }
 
+  auto FreeBlockSize(int idx) {
+    return seg_disk_capacity_[idx] - seg_disk_size_[idx];
+  }
+
+  auto Write(Segment *ptr, int size) {
+    seg_disk_size_[ptr->disk_id_] += size;
+    ptr->size_ += size;
+  }
   // 删除指定块所在的段中的数据
   // 参数：
   // - tag: 段的标签
@@ -123,6 +133,7 @@ public:
       }
       if (s.disk_addr_ <= block_id && block_id < s.disk_addr_ + s.capacity_) {
         // 如果块在段的范围内
+        seg_disk_size_[disk_id]--;
         s.Delete(1); // 从段中删除一个块
         return true; // 删除成功
       }
