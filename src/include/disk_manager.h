@@ -181,9 +181,9 @@ public:
     }
     auto [target, hot_cnt] = scheduler_->GetHotRT(disk_id);
     // 如果最近的任务都太远，就直接 jump
-    if (ReadDist(disk_id, task_k[0]) >= life_ ||
+    if (ReadDist(disk_id, task_k[0]) >= life_ ||ReadDist(disk_id, task_k[0])>=config::DISK_READ_FETCH_LEN/3||
         hot_cnt - scheduler_->GetCntRT(disk_id, disk.itr_) >=
-            config::JUMP_THRESHOLD) {
+            config::JUMP_THRESHOLD&&ReadDist(disk_id, task_k[0])>=config::DISK_READ_FETCH_LEN/10) {
       disk.Jump(time, target);               // 跳转到目标位置
       printer::ReadSetJump(disk_id, target); // 打印跳转信息
       return;

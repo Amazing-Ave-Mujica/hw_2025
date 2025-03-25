@@ -52,8 +52,7 @@ private:
     std::vector<int> remaining_r = r_; // 记录每种资源剩余可分配数量
     std::vector<int> remaining_v(n_, v_); // 记录每个容器剩余容量
 
-    std::uniform_int_distribution<int> dist_m(0, m_ - 1),
-        dist_n(0, n_ - 1); // NOLINT
+    std::uniform_int_distribution<int> dist_m(0, m_ - 1),dist_n(0, n_ - 1); // NOLINT
 
     // **第一步：均匀分配资源，保证 r[i] 约束**
     for (int i = 0; i < m_; ++i) {

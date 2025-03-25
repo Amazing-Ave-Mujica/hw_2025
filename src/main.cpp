@@ -33,7 +33,7 @@ auto main() -> int {
       g; // 输入时间片数量、标签数量、磁盘数量、磁盘容量、生命周期
 
   config::RTQ_DISK_PART_SIZE=v/m;
-  config::JUMP_THRESHOLD=config::RTQ_DISK_PART_SIZE;
+  config::JUMP_THRESHOLD=config::RTQ_DISK_PART_SIZE/2;
   // 初始化数据结构
   Data delete_data(m, ((t - 1) / TIME_SLICE_DIVISOR) + 1); // 删除数据
   Data write_data(m, ((t - 1) / TIME_SLICE_DIVISOR) + 1);  // 写入数据
