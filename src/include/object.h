@@ -70,7 +70,10 @@ public:
   // 将对象标记为无效
   // 参数：
   // - oid: 对象的索引
-  void Drop(int oid) { objs_[oid]->valid_ = false; }
+  void Drop(int oid) {
+    objs_[oid]->valid_ = false;
+    objs_[oid].reset();
+  }
 
 private:
   int size_{}; // 当前对象池中的对象数量
