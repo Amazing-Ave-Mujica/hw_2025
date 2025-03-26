@@ -49,10 +49,10 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
   if constexpr (config::WritePolicy() == config::compact) {
     for (int i = 0; i < m; i++) {
       if (i < m - 1) {
-        resource[i] = static_cast<int>((1.0 / 3.0) * max_allocate[i] * (n * v) /
+        resource[i] =  max_allocate[i] * (n * (v/3)) /
                                        std::accumulate(max_allocate.begin(),
                                                        max_allocate.end(),
-                                                       0)); // 按比例分配资源
+                                                       0); // 按比例分配资源
       } else {
         resource[i] =
             n * (v / 3) - std::accumulate(resource.begin(), resource.end(),
@@ -62,10 +62,10 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
   } else {
     for (int i = 0; i < m; i++) {
       if (i < m - 1) {
-        resource[i] = static_cast<int>((1.0) * max_allocate[i] * (n * v) /
+        resource[i] =  max_allocate[i] * (n * v) /
                                        std::accumulate(max_allocate.begin(),
                                                        max_allocate.end(),
-                                                       0)); // 按比例分配资源
+                                                       0); // 按比例分配资源
       } else {
         resource[i] = n * (v)-std::accumulate(resource.begin(), resource.end(),
                                               0); // 剩余资源分配给最后一个标签
