@@ -38,6 +38,7 @@ static constexpr db INF = 1e18; // 无穷大
 
 constexpr bool USE_COMPACT = true;
 
+// NOLINTNEXTLINE
 enum WRITEPOLICIES {
   none = 0, // 默认策略
   compact   // 只在硬盘的前1/3读数据
