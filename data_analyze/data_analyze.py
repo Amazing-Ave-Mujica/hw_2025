@@ -172,7 +172,7 @@ def main():
     """
     # 设置命令行参数
     parser = argparse.ArgumentParser(description="Plot graphs from data file.")
-    parser.add_argument('--data_path', type=str, default="../data/sample_practice.in",
+    parser.add_argument('--data_path', type=str, default="../data/sample_offical.in",
                         help='Path to the input data file.')
     parser.add_argument('--save_dir', type=str, default='./output',
                         help='Directory to save the output graphs.')

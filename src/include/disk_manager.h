@@ -77,9 +77,14 @@ public:
           object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
           for (int j = 0; j < object->size_; j++) {
             if (config::WritePolicy() == config::compact) {
-              auto block_id = disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od],
-                                              oid, j); // 写入数据到磁盘
-              object->tdisk_[kth][j] = block_id;       // 记录块 ID
+              int block_id;
+              if(kth>0)
+              {block_id = disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od],
+                                              oid, j);} // 写入数据到磁盘
+              else
+              {block_id = disk.WriteBlock(0,
+                oid, j);} // 写入数据到磁盘}       
+              object->tdisk_[kth][j] = block_id;// 记录块 ID
             } else {
               auto block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
               object->tdisk_[kth][j] = block_id;          // 记录块 ID
@@ -268,7 +273,6 @@ public:
     auto [target, hot_cnt] = scheduler_->GetHotRT(disk_id);
     // 如果最近的任务都太远，就直接 jump
     if (ReadDist(disk_id, task_k[0]) >= life_ ||
-        ReadDist(disk_id, task_k[0]) >= config::DISK_READ_FETCH_LEN / 3 ||
         hot_cnt - scheduler_->GetCntRT(disk_id, disk.itr_) >=
                 config::JUMP_THRESHOLD &&
             ReadDist(disk_id, task_k[0]) >= config::DISK_READ_FETCH_LEN / 10) {

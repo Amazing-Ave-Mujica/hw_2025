@@ -5,6 +5,7 @@
 #include "resource_allocator.h"
 #include "tsp.h"
 #include <iostream>
+#include <numeric>
 #include <vector>
 
 static constexpr int TIME_SLICE_DIVISOR =
