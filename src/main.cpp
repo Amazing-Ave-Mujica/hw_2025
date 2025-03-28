@@ -58,7 +58,7 @@ auto main() -> int {
   // 初始化资源分配器并进行模拟退火优化
   auto [best_solution, alpha] = InitResourceAllocator(
       t, m, n, v, g, delete_data, write_data, read_data); // 获取最优解
-  auto tsp = InitTSP(n, m, alpha, best_solution); // 初始化 TSP 问题
+  auto tsp = InitTSP(n, m, alpha, best_solution);         // 初始化 TSP 问题
 
   // 初始化对象池、调度器、段管理器和磁盘管理器
   ObjectPool pool(t);

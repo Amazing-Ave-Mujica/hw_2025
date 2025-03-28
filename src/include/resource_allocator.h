@@ -49,11 +49,11 @@ private:
   // **初始化可行解**
   auto InitializeSolution() -> std::vector<std::vector<int>> {
     std::vector<std::vector<int>> x(m_, std::vector<int>(n_, 0));
-    std::vector<int> remaining_r = r_; // 记录每种资源剩余可分配数量
+    std::vector<int> remaining_r = r_;    // 记录每种资源剩余可分配数量
     std::vector<int> remaining_v(n_, v_); // 记录每个容器剩余容量
 
-    std::uniform_int_distribution<int> dist_m(0, m_ - 1),
-        dist_n(0, n_ - 1); // NOLINT
+    std::uniform_int_distribution<int> dist_m(0, m_ - 1);
+    std::uniform_int_distribution<int> dist_n(0, n_ - 1);
 
     // **第一步：均匀分配资源，保证 r[i] 约束**
     for (int i = 0; i < m_; ++i) {
@@ -148,7 +148,9 @@ public:
       // **终止条件**
       if (T < config::EPS_T) {
 #ifdef ISCERR
-        { std::cerr << "epoch=" << iter << '\n'; }
+        {
+          std::cerr << "epoch=" << iter << '\n';
+        }
 #endif
         break;
       }
@@ -158,8 +160,8 @@ public:
   }
 
   // **获取最优解**
-  auto
-  GetBestSolution(bool iscerr = false) const -> std::vector<std::vector<int>> {
+  auto GetBestSolution(bool iscerr = false) const
+      -> std::vector<std::vector<int>> {
 #ifdef ISCERR
     std::vector<int> c(n_, 0), r(m_, 0); // NOLINT
     std::cerr << "Minimum penalty: " << best_penalty_ << '\n';
@@ -326,8 +328,8 @@ private:
     return population_.back();
   }
   // 交叉操作
-  auto Crossover(const Individual &parent1,
-                 const Individual &parent2) -> Individual {
+  auto Crossover(const Individual &parent1, const Individual &parent2)
+      -> Individual {
     std::uniform_real_distribution<db> dist(0.0, 1.0);
     Individual offspring = parent1;
 

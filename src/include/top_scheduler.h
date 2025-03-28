@@ -24,7 +24,7 @@ public:
   TopScheduler(int *time, Scheduler *scheduler, ObjectPool *obj_pool,
                DiskManager *disk_mgr)
       : time_(time), scheduler_(scheduler), obj_pool_(obj_pool),
-        disk_mgr_(disk_mgr){};
+        disk_mgr_(disk_mgr) {};
 
   // 处理读取请求
   // 参数：
@@ -64,7 +64,7 @@ public:
   auto InsertRequest(int id, int size, int tag) -> int {
     int oid = obj_pool_->NewObject(id, tag, size); // 创建新对象
     assert(id == oid);                             // 确保对象 ID 一致
-    scheduler_->NewTaskMgr(oid, size); // 创建新的任务管理器
+    scheduler_->NewTaskMgr(oid, size);             // 创建新的任务管理器
     for (int i = 0; i < 3; i++) {
       assert(disk_mgr_->Insert(oid, i)); // 将对象的副本插入磁盘
     }

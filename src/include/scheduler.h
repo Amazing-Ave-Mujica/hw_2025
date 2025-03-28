@@ -213,7 +213,7 @@ public:
   // - size: 对象的块数
   void NewTaskMgr(int oid, int size) {
     assert(oid == task_mgr_.size()); // 确保对象 ID 与任务管理器的大小一致
-    task_mgr_.emplace_back(size); // 创建新的任务管理器
+    task_mgr_.emplace_back(size);    // 创建新的任务管理器
   }
 
   // 添加新任务
