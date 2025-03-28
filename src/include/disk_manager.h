@@ -98,6 +98,40 @@ public:
       return false; // 写入失败
     };
 
+    auto write_by_block_forced = [&]() {
+      for (auto od : sf) {
+        auto &disk = disks_[od];
+
+        {
+        if (disk.free_size_ < object->size_) {
+            continue;
+          }
+        } 
+        bool exist = false;
+        for (int i = 0; i < kth; i++) {
+          exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
+        }
+        if (!exist) {
+          object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
+          for (int j = 0; j < object->size_; j++) { 
+            {
+              auto block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
+              object->tdisk_[kth][j] = block_id;          // 记录块 ID
+              for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
+                auto ptr = seg_mgr_->FindBlock(i, od, block_id);
+                if (ptr != nullptr) {
+                  assert(false);
+                  seg_mgr_->Write(ptr, 1); // 更新段信息
+                }
+              }
+            }
+          }
+          return true; // 写入成功
+        }
+      }
+      return false; // 写入失败
+    };
+
     // 按段写入数据
     auto write_by_segment = [&]() {
       int tag = object->tag_; // 获取对象的标签
@@ -163,6 +197,9 @@ public:
       return true;
     }
     if (write_by_block()) {
+      return true;
+    }
+    if (write_by_block_forced()){
       return true;
     }
     return false; // 写入失败
