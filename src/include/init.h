@@ -8,6 +8,75 @@
 #include <numeric>
 #include <vector>
 
+struct Spearman{
+  // 结构体用于存储值及其原始索引
+struct RankData {
+  db value;//NOLINT
+  int index;//NOLINT
+};
+
+// 比较函数用于排序
+static auto compare(RankData a, RankData b) -> bool { // NOLINT
+  return a.value < b.value;
+}
+
+// 计算秩
+auto getRanks(const  std::vector<db>& data) ->std::vector<db>{//NOLINT
+  int n = data.size();
+  std::vector<RankData> rankData(n);//NOLINT
+  
+  // 记录原始值和索引
+  for (int i = 0; i < n; i++) {
+      rankData[i] = {data[i], i};
+  }
+
+  // 按值排序
+  sort(rankData.begin(), rankData.end(), compare);//NOLINT
+
+  // 计算秩
+  std::vector<db> ranks(n);
+  int i = 0;
+  while (i < n) {
+      int j = i;
+      db sumRank = 0.0;//NOLINT
+      while (j < n && rankData[j].value == rankData[i].value) {
+          sumRank += (j + 1);  // 1-based rank
+          j++;
+      }
+      db avgRank = sumRank / (j - i);//NOLINT
+      for (int k = i; k < j; k++) {
+          ranks[rankData[k].index] = avgRank;
+      }
+      i = j;
+  }
+
+  return ranks;
+}
+
+// 计算斯皮尔曼秩相关系数
+auto spearmanCorrelation(const std::vector<db>& x, const std::vector<db>& y)->db {//NOLINT
+  int n = x.size();
+  if (n != y.size() || n == 0) {
+      std::cerr << "Error: Input vectors must have the same non-zero size.\n";
+      return NAN;
+  }
+
+  // 计算秩
+  std::vector<db> rankX = getRanks(x);//NOLINT
+  std::vector<db> rankY = getRanks(y);//NOLINT
+
+  // 计算秩差的平方和
+  db dSquaredSum = 0.0;//NOLINT
+  for (int i = 0; i < n; i++) {
+      db d = rankX[i] - rankY[i];
+      dSquaredSum += d * d;
+  }
+
+  // 计算斯皮尔曼相关系数
+  db spearman = 1.0 - (6.0 * dSquaredSum) / (n * (n * n - 1));//NOLINT
+  return spearman;
+}
+};
 static constexpr int TIME_SLICE_DIVISOR =
     config::TIME_SLICE_DIVISOR; // 常量替代魔法数字
 
@@ -75,17 +144,13 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
   // 计算 alpha 矩阵
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < m; j++) {
-      int sumi = 0, sumj = 0; // NOLINT
-      for (int k = 0; k < (t - 1) / TIME_SLICE_DIVISOR + 1; k++) {
-        alpha[i][j] +=
-            std::min(read_data[i][k], read_data[j][k]); // 计算混合惩罚项
-        sumi += read_data[i][k];
-        sumj += read_data[j][k];
+      std::vector<db> read_data_i(read_data[i].size());
+      std::vector<db> read_data_j(read_data[j].size());
+      for(int t=0;t<read_data_i.size();t++){
+        read_data_i[t]=read_data[i][t];
+        read_data_j[t]=read_data[j][t];
       }
-      int sum = std::min(sumi, sumj);
-      if (sum > 0) { // 避免除以零
-        alpha[i][j] /= sum;
-      }
+      alpha[i][j] = Spearman().spearmanCorrelation(read_data_i, read_data_j);
     }
   }
 

@@ -59,7 +59,7 @@ public:
     // std::vector<int> tag_sf(disks_.size());
     // std::iota(tag_sf.begin(), tag_sf.end(), 0);
     sort(tag_sf_.begin(), tag_sf_.end(), [&](int a, int b) {
-      return alpha_[object->tag_] > alpha_[object->tag_];
+      return alpha_[object->tag_][a] > alpha_[object->tag_][b];
     });
 
     // 按块写入数据
