@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cassert>
 #include <random>
+#include <utility>
 #include <vector>
 
 #ifndef _TIMESLICE
@@ -27,8 +28,8 @@ public:
   // - V: 每个磁盘的容量
   // - G: 磁盘的生命周期
   DiskManager(ObjectPool *obj_pool, Scheduler *scheduler,
-              SegmentManager *seg_mgr, int N, int V, int G)
-      : disk_cnt_(N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler),
+              SegmentManager *seg_mgr,std::vector<std::vector<db>>alpha, int N, int V, int G)
+      : disk_cnt_(N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler),alpha_(std::move(alpha)),
         seg_mgr_(seg_mgr) {
     disks_.reserve(disk_cnt_); // 预留磁盘数量的空间
     for (int i = 0; i < disk_cnt_; i++) {
@@ -52,6 +53,11 @@ public:
     std::vector<int> sf(disks_.size());
     std::iota(sf.begin(), sf.end(), 0);
     std::shuffle(sf.begin(), sf.end(), rng);
+    std::vector<int> tag_sf(disks_.size());
+    std::iota(tag_sf.begin(), tag_sf.end(), 0);
+    sort(tag_sf.begin(),tag_sf.end(),[&](int a,int b){
+      return alpha_[object->tag_]>alpha_[object->tag_];
+    });
 
     // 按块写入数据
     auto write_by_block = [&]() {
@@ -139,65 +145,33 @@ public:
 
     // 按段写入数据
     auto write_by_segment = [&]() {
-      int tag = object->tag_; // 获取对象的标签
-      for (auto od : sf) {
-        auto &disk = disks_[od];
-        auto ptr = seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
-        if (ptr == nullptr) {
-          continue; // 如果没有找到合适的段，跳过
+      for(auto tag:tag_sf){
+        for (auto od : sf) {
+          auto &disk = disks_[od];
+          auto ptr = seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
+          if (ptr == nullptr) {
+            continue; // 如果没有找到合适的段，跳过
+          }
+          bool exist = false;
+          for (int i = 0; i < kth; i++) {
+            exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
+          }
+          if (exist) {
+            continue; // 如果已存在副本，跳过
+          }
+          object->idisk_[kth] = od; // 设置副本所在磁盘
+          for (int j = 0; j < object->size_; j++) {
+            object->tdisk_[kth][j] =
+                disk.WriteBlock(ptr->disk_addr_, oid, j); // 写入数据到段
+          }
+          seg_mgr_->Write(ptr, object->size_); // 更新段信息
+          return true;                         // 写入成功
         }
-        bool exist = false;
-        for (int i = 0; i < kth; i++) {
-          exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
-        }
-        if (exist) {
-          continue; // 如果已存在副本，跳过
-        }
-        object->idisk_[kth] = od; // 设置副本所在磁盘
-        for (int j = 0; j < object->size_; j++) {
-          object->tdisk_[kth][j] =
-              disk.WriteBlock(ptr->disk_addr_, oid, j); // 写入数据到段
-        }
-        seg_mgr_->Write(ptr, object->size_); // 更新段信息
-        return true;                         // 写入成功
-      }
-      return false; // 写入失败
-    };
-    // 从段内写入一整块
-    auto write_by_segment_whole = [&]() {
-      int tag = object->tag_; // 获取对象的标签
-      for (auto od : sf) {
-        auto &disk = disks_[od];
-        auto ptr = seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
-        if (ptr == nullptr) {
-          continue; // 如果没有找到合适的段，跳过
-        }
-        bool exist = false;
-        for (int i = 0; i < kth; i++) {
-          exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
-        }
-        if (exist) {
-          continue; // 如果已存在副本，跳过
-        }
-        auto [pos, maxlen] =
-            disk.GetMaxLen(ptr->disk_addr_, ptr->disk_addr_ + ptr->capacity_);
-        if (maxlen < object->size_) {
-          continue;
-        }
-        object->idisk_[kth] = od; // 设置副本所在磁盘
-        for (int j = 0; j < object->size_; j++) {
-          object->tdisk_[kth][j] = disk.WriteBlock(pos, oid, j); // 写入数据到段
-        }
-        seg_mgr_->Write(ptr, object->size_); // 更新段信息
-        return true;                         // 写入成功
       }
       return false; // 写入失败
     };
 
     // 优先按段写入，如果失败则按块写入
-    if (kth == 0 && write_by_segment_whole()) {
-      return true;
-    }
     if (kth == 0 && write_by_segment()) {
       return true;
     }
@@ -462,4 +436,5 @@ private:
   Scheduler *scheduler_;    // 调度器
   SegmentManager *seg_mgr_; // 段管理器
   std::vector<Disk> disks_; // 磁盘列表
+  std::vector<std::vector<db>>alpha_;//相似矩阵
 };

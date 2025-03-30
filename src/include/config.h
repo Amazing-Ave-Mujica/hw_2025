@@ -1,6 +1,6 @@
 #pragma once
 #pragma optimize(2)
-using db = long double;
+using db = double;
 namespace config {
 
 // #define LLDB
