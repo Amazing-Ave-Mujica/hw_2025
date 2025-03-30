@@ -18,8 +18,8 @@ static constexpr int T = 20000;           // 模拟退火初始温度
 static constexpr db EPS_T = 1e-4;         // 模拟退火终止温度
 static constexpr db COOLING_RATE = 0.999; // 模拟退火降温速率
 static constexpr int MAX_ITER = 20000;    // 模拟退火最大迭代次数
-static constexpr db BETA_VALUE = 1;       // 模拟退火、遗传算法超参数
-static constexpr db GAMA_VALUE = 1;       // 遗传算法超参数，正则项系数
+static constexpr db BETA_VALUE = 1; // 模拟退火、遗传算法超参数
+static constexpr db GAMA_VALUE = 1; // 遗传算法超参数，正则项系数
 
 static constexpr int SEGMENT_DEFAULT_CAPACITY = 10;    // 段默认容量
 static constexpr int PRINTER_BUF_CAPACITY = (1 << 20); // 打印缓冲区容量
@@ -31,8 +31,8 @@ static constexpr db K_MUTATE_RATE = 0.05; // 变异概率
 static constexpr int ELITE_NUM = 10;      // 精英个体数量
 
 static constexpr int DISK_READ_FETCH_LEN = 63; // 规划最近的读取任务个数
-int RTQ_DISK_PART_SIZE;                        // RTQ 给磁盘分区大小 NOLINT
-int JUMP_THRESHOLD; // 热门块比当前块大多少时直接跳转 NOLINT
+int RTQ_DISK_PART_SIZE; // RTQ 给磁盘分区大小 NOLINT
+int JUMP_THRESHOLD;     // 热门块比当前块大多少时直接跳转 NOLINT
 
 static constexpr db INF = 1e18; // 无穷大
 

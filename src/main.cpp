@@ -33,7 +33,7 @@ auto main() -> int {
       g; // 输入时间片数量、标签数量、磁盘数量、磁盘容量、生命周期
 
   config::RTQ_DISK_PART_SIZE = v / m;
-  config::JUMP_THRESHOLD = config::RTQ_DISK_PART_SIZE ;
+  config::JUMP_THRESHOLD = config::RTQ_DISK_PART_SIZE;
   // 初始化数据结构
   Data delete_data(m, ((t - 1) / TIME_SLICE_DIVISOR) + 1); // 删除数据
   Data write_data(m, ((t - 1) / TIME_SLICE_DIVISOR) + 1);  // 写入数据
@@ -58,7 +58,7 @@ auto main() -> int {
   // 初始化资源分配器并进行模拟退火优化
   auto [best_solution, alpha] = InitResourceAllocator(
       t, m, n, v, g, delete_data, write_data, read_data); // 获取最优解
-  auto tsp = InitTSP(n, m, alpha, best_solution);         // 初始化 TSP 问题
+  auto tsp = InitTSP(n, m, alpha, best_solution); // 初始化 TSP 问题
 
   // 初始化对象池、调度器、段管理器和磁盘管理器
   ObjectPool pool(t);

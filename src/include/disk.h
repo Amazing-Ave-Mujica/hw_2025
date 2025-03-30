@@ -13,7 +13,7 @@ extern int timeslice; // 全局变量，表示时间片
 class Disk {
   friend class DiskManager; // 声明 DiskManager 为友元类，可以访问 Disk
                             // 的私有成员
-  friend class Segment;     // 声明 Segment 为友元类，可以访问 Disk 的私有成员
+  friend class Segment; // 声明 Segment 为友元类，可以访问 Disk 的私有成员
 
 public:
   // 表示空块的常量，用于标识未被占用的存储块
@@ -37,9 +37,9 @@ public:
     assert(it != free_block_idck_idck_.end()); // 确保存在空闲块
     int idx = *it;                             // 获取空闲块的索引
     storage_[idx] = {oid, y};                  // 将数据写入该块
-    free_block_idck_idck_.erase(it);           // 从空闲块集合中移除该块
-    --free_size_;                              // 更新空闲块数量
-    return idx;                                // 返回写入的块索引
+    free_block_idck_idck_.erase(it); // 从空闲块集合中移除该块
+    --free_size_;                    // 更新空闲块数量
+    return idx;                      // 返回写入的块索引
   }
 
   // 写入数据到指定块或之后的第一个空闲块
@@ -49,9 +49,9 @@ public:
     assert(it != free_block_idck_idck_.end()); // 确保存在空闲块
     int idx = *it;                             // 获取空闲块的索引
     storage_[idx] = {oid, y};                  // 将数据写入该块
-    free_block_idck_idck_.erase(it);           // 从空闲块集合中移除该块
-    --free_size_;                              // 更新空闲块数量
-    return idx;                                // 返回写入的块索引
+    free_block_idck_idck_.erase(it); // 从空闲块集合中移除该块
+    --free_size_;                    // 更新空闲块数量
+    return idx;                      // 返回写入的块索引
   }
 
   // 删除指定索引的块中的数据
@@ -67,7 +67,7 @@ public:
 
   // 计算读取操作的时间成本
   auto ReadCost() -> int {
-    if (prev_is_rd_) {                                  // 如果上一次操作是读取
+    if (prev_is_rd_) { // 如果上一次操作是读取
       return std::max(16, (prev_rd_cost_ + 1) * 4 / 5); // 返回递减的读取成本
     }
     return 64; // 如果上一次操作不是读取，返回初始读取成本
@@ -79,7 +79,7 @@ public:
       time -= (prev_rd_cost_ = ReadCost());          // 减去读取成本
       prev_is_rd_ = true;                            // 设置为读取状态
       itr_ = (itr_ + 1 == capacity_) ? 0 : itr_ + 1; // 更新迭代器位置
-      assert(itr_ >= 0 && itr_ < capacity_);         // 确保迭代器位置合法
+      assert(itr_ >= 0 && itr_ < capacity_); // 确保迭代器位置合法
       if (time < 0) {
         int x;
       }

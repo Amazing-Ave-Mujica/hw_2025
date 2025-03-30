@@ -59,7 +59,7 @@ public:
         auto &disk = disks_[od];
 
         if constexpr (config::WritePolicy() == config::compact) {
-          if (disk.free_size_ - seg_mgr_->FreeBlockSize(od) < object->size_) {
+          if ((kth > 0 && disk.free_size_ - seg_mgr_->FreeBlockSize(od) < object->size_) || (kth == 0 && disk.free_size_ < object->size_)) {
             continue;
           }
         } else if constexpr (config::WritePolicy() == config::none) {
@@ -78,20 +78,26 @@ public:
           for (int j = 0; j < object->size_; j++) {
             if (config::WritePolicy() == config::compact) {
               int block_id;
-              if(kth>0)
-              {block_id = disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od],
-                                              oid, j);} // 写入数据到磁盘
-              else
-              {block_id = disk.WriteBlock(0,
-                oid, j);} // 写入数据到磁盘}       
-              object->tdisk_[kth][j] = block_id;// 记录块 ID
+              if (kth > 0) {
+                block_id =
+                    disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od], oid, j);
+              } // 写入数据到磁盘
+              else {
+                block_id = disk.WriteBlock(0, oid, j);
+              }                                  // 写入数据到磁盘}
+              object->tdisk_[kth][j] = block_id; // 记录块 ID
+              for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
+                auto ptr = seg_mgr_->FindBlock(i, od, block_id);
+                if (ptr != nullptr) {
+                  seg_mgr_->Write(ptr, 1); // 更新段信息
+                }
+              }
             } else {
               auto block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
               object->tdisk_[kth][j] = block_id;          // 记录块 ID
               for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
                 auto ptr = seg_mgr_->FindBlock(i, od, block_id);
                 if (ptr != nullptr) {
-                  assert(false);
                   seg_mgr_->Write(ptr, 1); // 更新段信息
                 }
               }
@@ -108,24 +114,23 @@ public:
         auto &disk = disks_[od];
 
         {
-        if (disk.free_size_ < object->size_) {
+          if (disk.free_size_ < object->size_) {
             continue;
           }
-        } 
+        }
         bool exist = false;
         for (int i = 0; i < kth; i++) {
           exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
         }
         if (!exist) {
           object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
-          for (int j = 0; j < object->size_; j++) { 
+          for (int j = 0; j < object->size_; j++) {
             {
               auto block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
               object->tdisk_[kth][j] = block_id;          // 记录块 ID
               for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
                 auto ptr = seg_mgr_->FindBlock(i, od, block_id);
                 if (ptr != nullptr) {
-                  assert(false);
                   seg_mgr_->Write(ptr, 1); // 更新段信息
                 }
               }
@@ -204,7 +209,7 @@ public:
     if (write_by_block()) {
       return true;
     }
-    if (write_by_block_forced()){
+    if (write_by_block_forced()) {
       return true;
     }
     return false; // 写入失败
