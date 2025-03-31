@@ -6,7 +6,7 @@ namespace config {
 // #define LLDB
 // #define SINGLE_READ_MODE
 #define ISCERR
-// #define USINGTSP      // 是否使用TSP
+#define USINGTSP      // 是否使用TSP
 // #define WRITE_BALANCE // 是否按照磁盘剩余空间排序
 
 static constexpr int RANDOM_SEED = 0; // 随机数种子

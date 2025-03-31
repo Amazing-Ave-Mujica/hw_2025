@@ -156,7 +156,7 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
 
   // 初始化资源分配器并求解
   if constexpr (config::WritePolicy() == config::compact) {
-    ResourceAllocator ra(m, n, v / 3, v / m, resource, alpha);
+    ResourceAllocator ra(m, n, v / 3, v / (2*m), resource, alpha);
     ra.Solve(ISCERR);
     return {ra.GetBestSolution(ISCERR), alpha};
   }
@@ -194,3 +194,4 @@ auto InitTSP(int n, int m, const std::vector<std::vector<db>> &alpha,
   return ans;
 #endif
 }
+//1012

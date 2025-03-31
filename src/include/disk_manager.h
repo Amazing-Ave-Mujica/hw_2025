@@ -245,12 +245,10 @@ public:
     if (task_k.empty()) {
       return;
     }
-    auto [target, hot_cnt] = scheduler_->GetHotRT(disk_id);
     // 如果最近的任务都太远，就直接 jump
-    if (ReadDist(disk_id, task_k[0]) >= life_ ||
-        hot_cnt - scheduler_->GetCntRT(disk_id, disk.itr_) >=
-                config::JUMP_THRESHOLD &&
-            ReadDist(disk_id, task_k[0]) >= config::DISK_READ_FETCH_LEN / 10) {
+    int target=scheduler_->GetRT(disk_id, disk.GetItr());
+    if (ReadDist(disk_id, task_k[0]) >= life_ ) {
+      
       disk.Jump(time, target);               // 跳转到目标位置
       printer::ReadSetJump(disk_id, target); // 打印跳转信息
       return;
