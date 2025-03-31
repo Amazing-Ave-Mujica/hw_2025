@@ -14,7 +14,9 @@ auto TSP(int n, const std::vector<std::vector<db>> &dist) -> std::vector<int> {
                   n, -config::INF)); // dp[S][i]: 访问 S，最后停在 i 的最短路径
   std::vector<std::vector<int>> parent(1 << n,
                                        std::vector<int>(n, -1)); // 记录转移路径
-  dp[1][0] = 0; // 初始状态：仅访问了起点 0
+  for(int i=0;i<n;i++){
+    dp[1<<i][i] = 0; // 初始状态：仅访问了起点 0
+  }
 
   // 动态规划求解
   for (int s = 1; s < (1 << n); s++) {
@@ -29,7 +31,7 @@ auto TSP(int n, const std::vector<std::vector<db>> &dist) -> std::vector<int> {
         int new_s = (s | (1 << j)); // 新状态，加入 j
         db res = dp[s][i] + dist[i][j];
         if (new_s == full_mask) {
-          res += dist[j][0];
+          // res += dist[j][0];
         } // 最后一步，回到起点
         if (dp[new_s][j] < res) {
           dp[new_s][j] = res;
