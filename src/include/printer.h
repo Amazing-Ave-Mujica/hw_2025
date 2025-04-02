@@ -16,27 +16,36 @@ extern int timeslice; // 全局变量，表示时间片
 namespace printer {
 
 // 缓冲区，用于存储不同类型的请求
-int buf[3]
+int buf[4]
        [config::PRINTER_BUF_CAPACITY]; // 三种请求类型的缓冲区，每种类型最多存储
                                        // 2^20 个请求
-int top[3] = {0};               // 每种请求缓冲区的当前大小
-std::string ops[config::MAX_N]; // 每个磁盘的操作记录（最多支持 10 个磁盘）
+int top[4] = {0};
+std::string ops[config::MAX_N][2]; // 每个磁盘的操作记录（最多支持 10 个磁盘）
+int gc_top[config::MAX_N] = {0}; // 垃圾回收操作的索引
+int gc_buf[config::MAX_N][config::PRINTER_BUF_CAPACITY][2];
 
 // 请求类型的枚举
 // DELETE: 删除请求
 // WRITE: 写入请求
 // READ: 读取请求
 // NOLINTNEXTLINE
-enum { DELETE = 0, WRITE, READ };
+enum { DELETE = 0, WRITE, READ,READBUSY,GC };
 
 // 清空指定类型的缓冲区和操作记录
 // 参数：
 // - idx: 要清空的缓冲区索引
 void Clean(int idx) {
   std::cout.flush(); // 刷新输出流
+  if (idx == GC){
+    for(int & i : gc_top){
+      i = 0; // 重置垃圾回收操作的索引
+    }
+    
+  }
   top[idx] = 0;      // 重置缓冲区大小
   for (auto &op : ops) {
-    op.clear(); // 清空操作记录
+    op[0].clear(); // 清空操作记录
+    op[1].clear(); // 清空操作记录
   }
 }
 
@@ -49,9 +58,9 @@ void AddReadRequest(int RequestID) { buf[READ][top[READ]++] = RequestID; }
 // 参数：
 // - DiskNum: 磁盘编号
 // - cnt: 跳过的次数
-void ReadAddPass(size_t DiskNum, int cnt) {
+void ReadAddPass(int DiskNum, int cnt,int diskhead) {
   for (int i = 0; i < cnt; i++) {
-    ops[DiskNum].push_back('p'); // 添加 'p' 表示跳过操作
+    ops[DiskNum][diskhead].push_back('p'); // 添加 'p' 表示跳过操作
   }
 }
 
@@ -59,9 +68,9 @@ void ReadAddPass(size_t DiskNum, int cnt) {
 // 参数：
 // - DiskNum: 磁盘编号
 // - cnt: 读取的次数
-void ReadAddRead(size_t DiskNum, int cnt) {
+void ReadAddRead(int DiskNum, int cnt,int diskhead) {
   for (int i = 0; i < cnt; i++) {
-    ops[DiskNum].push_back('r'); // 添加 'r' 表示读取操作
+    ops[DiskNum][diskhead].push_back('r'); // 添加 'r' 表示读取操作
   }
 }
 
@@ -69,8 +78,12 @@ void ReadAddRead(size_t DiskNum, int cnt) {
 // 参数：
 // - DiskNum: 磁盘编号
 // - DiskblockID: 跳转的块编号
-void ReadSetJump(size_t DiskNum, size_t DiskblockID) {
-  ops[DiskNum] = "j " + std::to_string(DiskblockID + 1); // 添加跳转操作
+void ReadSetJump(int DiskNum, int DiskblockID,int diskhead) {
+  ops[DiskNum][diskhead] = "j " + std::to_string(DiskblockID + 1); // 添加跳转操作
+}
+
+void ReadAddBusy(int RequestID){
+  buf[READBUSY][top[READBUSY]++] = RequestID;
 }
 
 // 添加写入对象到缓冲区
@@ -117,17 +130,39 @@ auto PrintWrite(ObjectPool &obj_pool) -> void {
 // - N: 磁盘数量
 auto PrintRead(int N) -> void {
   for (int i = 0; i < N; i++) {
-    auto &op = ops[i];
-    if (op.empty() || op.back() == 'r' || op.back() == 'p') {
-      op.push_back('#'); // 添加 '#' 表示操作结束
+    for(int j = 0;j < 2;j++){
+      auto &op = ops[i][j];
+      if (op.empty() || op.back() == 'r' || op.back() == 'p') {
+        op.push_back('#'); // 添加 '#' 表示操作结束
+      }
+      std::cout << op << '\n'; // 打印磁盘的操作记录
     }
-    std::cout << op << '\n'; // 打印磁盘的操作记录
   }
   std::cout << top[READ] << '\n'; // 打印读取请求的数量
   for (int i = 0; i < top[READ]; i++) {
     std::cout << buf[READ][i] << '\n'; // 打印每个读取请求的 ID
   }
+  std::cout << top[READBUSY] << '\n'; // 打印读取请求的数量
+  for(int i = 0;i < top[READBUSY];i++){
+    std::cout << buf[READBUSY][i] << '\n'; // 打印每个读取请求的 ID
+  }
   Clean(READ); // 清空读取请求缓冲区
+  Clean(READBUSY); // 清空读取请求缓冲区
+}
+
+auto GCAdd(int disk_id,int id1,int id2){
+  gc_buf[disk_id][gc_top[disk_id]++][0] = id1;
+  gc_buf[disk_id][gc_top[disk_id]++][1] = id2;
+}
+
+auto GCPrint(int N){
+  for(int i = 0;i < N;i++){
+    std::cout << gc_top[i] << '\n';
+    for(int j = 0;j < gc_top[i];j++){
+      std::cout << gc_buf[i][j][0] + 1 << ' ' << gc_buf[i][j][1] + 1 << '\n';
+    }
+  }
+  Clean(GC); // 清空垃圾回收操作缓冲区
 }
 
 } // namespace printer

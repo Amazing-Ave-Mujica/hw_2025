@@ -28,9 +28,9 @@ auto main() -> int {
   std::ios::sync_with_stdio(false);
   std::cin.tie(nullptr);
 
-  int t, m, n, v, g; // NOLINT
+  int t, m, n, v, g,k; // NOLINT
   std::cin >> t >> m >> n >> v >>
-      g; // 输入时间片数量、标签数量、磁盘数量、磁盘容量、生命周期
+      g >> k; // 输入时间片数量、标签数量、磁盘数量、磁盘容量、生命周期
 
   config::RTQ_DISK_PART_SIZE = v / m;
   config::JUMP_THRESHOLD = config::RTQ_DISK_PART_SIZE;
@@ -124,6 +124,11 @@ auto main() -> int {
     write_op();  // 处理写入操作
     read_op();   // 处理读取操作
     tes.Read();  // 执行读取操作
+
+    if (timeslice % 1800 == 0){
+      dm.GarbageCollection(k); // 垃圾回收
+    }
+
 #ifdef ISCERR
     if (timeslice == t + 105) {
       for (int i = 0; i < n; i++) {
