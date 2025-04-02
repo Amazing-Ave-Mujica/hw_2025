@@ -64,8 +64,8 @@ auto main() -> int {
   ObjectPool pool(t);
   Scheduler none(&pool, n, t, v);
   SegmentManager seg_mgr(m, n, v, best_solution, tsp);
-  DiskManager dm(&pool, &none, &seg_mgr, n, v, g);
-  TopScheduler tes(&timeslice, &none, &pool, &dm);
+  DiskManager dm(&pool, &none, &seg_mgr,alpha, n,m, v, g);
+  TopScheduler tes(&none, &pool, &dm);
 
   // 同步函数
   auto sync = []() -> bool {
