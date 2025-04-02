@@ -22,7 +22,7 @@ public:
   // - scheduler: 调度器，用于管理任务
   // - obj_pool: 对象池，用于管理对象
   // - disk_mgr: 磁盘管理器，用于管理磁盘操作
-  TopScheduler(Scheduler *scheduler, ObjectPool *obj_pool,
+  TopScheduler( Scheduler *scheduler, ObjectPool *obj_pool,
                DiskManager *disk_mgr)
       : scheduler_(scheduler), obj_pool_(obj_pool),
         disk_mgr_(disk_mgr){};
@@ -35,7 +35,6 @@ public:
     assert(oid >= 0);                       // 确保对象 ID 合法
     assert(obj_pool_->IsValid(oid));        // 确保对象有效
     auto object = obj_pool_->GetObjAt(oid); // 获取对象
-
     int disk; // 选择读的磁盘
     if constexpr (config::WritePolicy() == config::none) {
       std::vector<std::pair<int, int>> v; // 磁盘列表
