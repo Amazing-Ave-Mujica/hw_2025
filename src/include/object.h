@@ -72,7 +72,7 @@ public:
   // - oid: 对象的索引
   void Drop(int oid) {
     objs_[oid]->valid_ = false;
-    objs_[oid].reset();
+    //objs_[oid].reset();
   }
 
 private:

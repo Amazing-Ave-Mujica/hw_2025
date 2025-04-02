@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.h"
+#include "disk.h"
 #include "object.h"
 #include "printer.h"
 #include "task.h"
@@ -56,9 +57,24 @@ public:
 
   // 从队列中移除指定块 ID
   void Remove(int x) {
+    if (cnt_.count(x) == 0) {
+      return;
+    }
     UpdateSum(x, -cnt_[x]);
     st_.erase(x);
     cnt_.erase(x);
+  }
+
+  // 删除一次请求
+  void RemoveOnce(int x) {
+    if (cnt_.count(x) == 0) {
+      return;
+    }
+    UpdateSum(x, -1);
+    if (--cnt_[x] == 0) {
+      st_.erase(x);
+      cnt_.erase(x);
+    }
   }
 
   // 获取队列中最接近指定位置的块 ID
@@ -137,15 +153,19 @@ public:
   // 添加新任务
   // 参数：
   // - ptr: 指向任务的智能指针
-  void NewTask(std::unique_ptr<Task> ptr) {
+  void  NewTask(std::shared_ptr<Task> ptr) {
     l_[0].emplace_back(std::move(ptr)); // 将任务添加到初始状态
   }
 
   // 完成所有任务
   void Finish() {
-    while (!l_[mask_].empty()) { // 遍历所有已完成的任务
-      for (auto &p : l_[mask_]) {
-        printer::AddReadRequest(p->tid_); // 将任务 ID 添加到读取请求
+    if (!l_[mask_].empty()) { // 遍历所有已完成的任务
+      for (const auto &p : l_[mask_]) {
+        // 引用计数大于 1 说明任务没有先繁忙
+        if (p.use_count() > 1) {
+          assert(p->timestamp_ > timeslice - config::REQ_BUSY_TIME);
+          printer::AddReadRequest(p->tid_); // 将任务 ID 添加到读取请求
+        }
       }
       l_[mask_].clear(); // 清空已完成任务列表
     }
@@ -168,6 +188,7 @@ public:
 
   // 清空所有任务
   void Clear() {
+    valid_ = false;
     for (int i = 0; i <= mask_; i++) {
       l_[i].clear();
     }
@@ -177,9 +198,10 @@ public:
   friend void printer::AddDeleteObject(TaskManager &t);
 
 private:
+  bool valid_{true}; // 表示对象是否已经被删除
   int mask_; // 状态掩码，用于表示块的读取状态
   // 状态压缩，最多支持 32 种块的读/未读状态
-  std::vector<std::list<std::unique_ptr<Task>>> l_;
+  std::vector<std::list<std::shared_ptr<Task>>> l_;
 };
 
 namespace printer {
@@ -220,9 +242,10 @@ public:
   // 参数：
   // - oid: 对象 ID
   // - ptr: 指向任务的智能指针
-  void NewTask(int oid, std::unique_ptr<Task> ptr) {
+  void NewTask(int oid, const std::shared_ptr<Task>& ptr) {
     assert(oid < task_mgr_.size());         // 确保对象 ID 合法
-    task_mgr_[oid].NewTask(std::move(ptr)); // 添加任务到对应的任务管理器
+    task_mgr_[oid].NewTask(ptr); // 添加任务到对应的任务管理器
+    req_list_.push_back(ptr);
   }
 
   // 将块 ID 添加到指定磁盘的读取队列
@@ -291,7 +314,21 @@ public:
     task_mgr_[oid].Update(y); // 更新任务状态
   }
 
-  // 获取磁盘读任务的分布，用于读调度器使用
+  // [?] 获取磁盘读任务的分布，用于读调度器使用
+
+  void PopOldReqs() {
+    int lim = timeslice - config::REQ_BUSY_TIME;
+    while (!req_list_.empty() && req_list_.front()->timestamp_ <= lim) {
+      const auto &req = req_list_.front();
+      // 如果对象之前没有被删除，到对应磁盘删除读请求
+      if (obj_pool_->IsValid(req->oid_)) {
+        for (const auto& [disk_id, block_id] : req->work_) {
+          q_[disk_id].RemoveOnce(block_id);
+        }
+      }
+      req_list_.pop_front();
+    }
+  }
 
 private:
   /*
@@ -304,4 +341,5 @@ private:
   ObjectPool *obj_pool_;              // 对象池，用于管理对象
   std::vector<RTQ> q_;                // 每个磁盘的读取队列
   std::vector<TaskManager> task_mgr_; // 每个对象的任务管理器
+  std::list<std::shared_ptr<Task>> req_list_; // 支持删除 105 个时间片前的任务
 };

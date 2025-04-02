@@ -1,4 +1,5 @@
 #include "config.h"
+#include "disk.h"
 #include "disk_manager.h"
 #include "object.h"
 #include "scheduler.h"
@@ -21,9 +22,9 @@ public:
   // - scheduler: 调度器，用于管理任务
   // - obj_pool: 对象池，用于管理对象
   // - disk_mgr: 磁盘管理器，用于管理磁盘操作
-  TopScheduler(int *time, Scheduler *scheduler, ObjectPool *obj_pool,
+  TopScheduler(Scheduler *scheduler, ObjectPool *obj_pool,
                DiskManager *disk_mgr)
-      : time_(time), scheduler_(scheduler), obj_pool_(obj_pool),
+      : scheduler_(scheduler), obj_pool_(obj_pool),
         disk_mgr_(disk_mgr){};
 
   // 处理读取请求
@@ -34,8 +35,6 @@ public:
     assert(oid >= 0);                       // 确保对象 ID 合法
     assert(obj_pool_->IsValid(oid));        // 确保对象有效
     auto object = obj_pool_->GetObjAt(oid); // 获取对象
-    scheduler_->NewTask(oid,
-                        std::make_unique<Task>(tid, oid, *time_)); // 创建新任务
 
     int x; // 选择的副本索引
     if constexpr (config::WritePolicy() == config::none) {
@@ -50,9 +49,14 @@ public:
       x = 0;
     }
     int disk = object->idisk_[x]; // 获取选择的磁盘 ID
+    std::vector<std::pair<int, int>> work;
+    work.reserve(object->size_);
     for (int i = 0; i < object->size_; i++) {
       scheduler_->PushRTQ(disk, object->tdisk_[x][i]); // 将块 ID 添加到读取队列
+      work.emplace_back(disk, object->tdisk_[x][i]);
     }
+    scheduler_->NewTask(oid,
+      std::make_shared<Task>(tid, oid, timeslice, std::move(work))); // 创建新任务
   }
 
   // 处理插入请求
@@ -95,13 +99,13 @@ public:
 
   // 执行读取操作
   void Read() {
+    scheduler_->PopOldReqs();
     for (int i = 0; i < disk_mgr_->GetDiskCnt(); i++) {
       disk_mgr_->Read(i); // 调用磁盘管理器的读取操作
     }
   }
 
 private:
-  int *time_;             // 指向全局时间片的指针
   Scheduler *scheduler_;  // 调度器，用于管理任务
   ObjectPool *obj_pool_;  // 对象池，用于管理对象
   DiskManager *disk_mgr_; // 磁盘管理器，用于管理磁盘操作
