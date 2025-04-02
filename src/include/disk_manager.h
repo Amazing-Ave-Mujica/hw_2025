@@ -28,9 +28,9 @@ public:
   // - G: 磁盘的生命周期
   DiskManager(ObjectPool *obj_pool, Scheduler *scheduler,
               SegmentManager *seg_mgr, int N, int V, int G)
-      : disk_cnt_(N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler),
+      : disk_cnt_(N + N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler),
         seg_mgr_(seg_mgr) {
-    disks_.reserve(disk_cnt_); // 预留磁盘数量的空间
+    disks_.reserve(disk_cnt_); // 每个磁盘有一个镜像磁盘，只是存的东西必须一致
     for (int i = 0; i < disk_cnt_; i++) {
       disks_.emplace_back(i, V); // 初始化每个磁盘
     }
@@ -45,6 +45,9 @@ public:
   // - kth: 副本编号
   // 返回值：是否插入成功
   auto Insert(int oid, int kth) -> bool {
+
+    throw std::runtime_error("同时写到 disk_id, disk_id + disk_cnt");
+
     static std::mt19937 rng(config::RANDOM_SEED);
     auto object = obj_pool_->GetObjAt(oid); // 获取对象
 
@@ -221,6 +224,7 @@ public:
   // - disk_id: 磁盘 ID
   // - block_id: 块 ID
   void Delete(int tag, int disk_id, int block_id) {
+    throw std::runtime_error("同时删除 disk_id, disk_id + disk_cnt");
     seg_mgr_->Delete(tag, disk_id, block_id); // 删除段信息
     disks_[disk_id].Delete(block_id);         // 删除磁盘块数据
   }

@@ -31,7 +31,7 @@ auto main() -> int {
   int t, m, n, v, g; // NOLINT
   std::cin >> t >> m >> n >> v >>
       g; // 输入时间片数量、标签数量、磁盘数量、磁盘容量、生命周期
-
+  config::REAL_DISK_CNT = n;
   config::RTQ_DISK_PART_SIZE = v / m;
   config::JUMP_THRESHOLD = config::RTQ_DISK_PART_SIZE;
   // 初始化数据结构

@@ -34,6 +34,7 @@ namespace config {
  constexpr int REQ_BUSY_TIME = 105; 
 int RTQ_DISK_PART_SIZE; // RTQ 给磁盘分区大小 NOLINT
 int JUMP_THRESHOLD;     // 热门块比当前块大多少时直接跳转 NOLINT
+int REAL_DISK_CNT;      // NOLINT
 
  constexpr db INF = 1e18; // 无穷大
 

@@ -36,21 +36,35 @@ public:
     assert(obj_pool_->IsValid(oid));        // 确保对象有效
     auto object = obj_pool_->GetObjAt(oid); // 获取对象
 
-    int x; // 选择的副本索引
+    int disk; // 选择读的磁盘
     if constexpr (config::WritePolicy() == config::none) {
-      std::vector<int> v{0, 1, 2}; // 副本索引列表
+      std::vector<std::pair<int, int>> v; // 磁盘列表
+      v.reserve(6);
+      for (int i = 0; i < 3; i++) {
+        v.emplace_back(object->idisk_[i], object->tdisk_[i][0]);
+        v.emplace_back(object->idisk_[i] + config::REAL_DISK_CNT, object->tdisk_[i][0]);
+      }
       // 根据磁盘压力排序，选择压力最小的磁盘
-      std::sort(v.begin(), v.end(), [&](int x, int y) {
-        return disk_mgr_->GetStress(object->idisk_[x], object->tdisk_[x][0]) <
-               disk_mgr_->GetStress(object->idisk_[y], object->tdisk_[y][0]);
+      std::sort(v.begin(), v.end(), [&](auto x, auto y) {
+        return disk_mgr_->GetStress(x.first, x.second) <
+               disk_mgr_->GetStress(y.first, y.second);
       });
-      x = v[0]; // 选择压力最小的副本
+      disk = v[0].first; // 选择压力最小的副本
     } else if constexpr (config::WritePolicy() == config::compact) {
-      x = 0;
+      disk = object->idisk_[0]; // 这是什么几把
     }
-    int disk = object->idisk_[x]; // 获取选择的磁盘 ID
+
+    int x;
+    for (int i = 0; i < 3; i++) {
+      if (object->idisk_[i] == disk || object->idisk_[i] + config::REAL_DISK_CNT == disk) {
+        x = i;
+        break;
+      }
+    }
+
     std::vector<std::pair<int, int>> work;
     work.reserve(object->size_);
+    // 怎么分给两个镜像呢
     for (int i = 0; i < object->size_; i++) {
       scheduler_->PushRTQ(disk, object->tdisk_[x][i]); // 将块 ID 添加到读取队列
       work.emplace_back(disk, object->tdisk_[x][i]);
