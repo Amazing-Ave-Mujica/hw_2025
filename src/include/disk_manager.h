@@ -8,7 +8,9 @@
 #include "segment.h"
 #include <algorithm>
 #include <cassert>
+#include <numeric>
 #include <random>
+#include <utility>
 #include <vector>
 
 #ifndef _TIMESLICE
@@ -26,10 +28,12 @@ public:
   // - N: 磁盘数量
   // - V: 每个磁盘的容量
   // - G: 磁盘的生命周期
-  DiskManager(ObjectPool *obj_pool, Scheduler *scheduler,
-              SegmentManager *seg_mgr, int N, int V, int G)
+  DiskManager(ObjectPool *obj_pool, Scheduler *scheduler, 
+              SegmentManager *seg_mgr, std::vector<std::vector<db>> alpha,
+              int N,int M, int V, int G)
       : disk_cnt_(N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler),
-        seg_mgr_(seg_mgr) {
+        alpha_(std::move(alpha)), seg_mgr_(seg_mgr),tag_sf_(M) {
+    std::iota(tag_sf_.begin(), tag_sf_.end(), 0);
     disks_.reserve(disk_cnt_); // 预留磁盘数量的空间
     for (int i = 0; i < disk_cnt_; i++) {
       disks_.emplace_back(i, V); // 初始化每个磁盘
@@ -52,22 +56,25 @@ public:
     std::vector<int> sf(disks_.size());
     std::iota(sf.begin(), sf.end(), 0);
     std::shuffle(sf.begin(), sf.end(), rng);
+    // std::vector<int> tag_sf(disks_.size());
+    // std::iota(tag_sf.begin(), tag_sf.end(), 0);
+    sort(tag_sf_.begin(), tag_sf_.end(), [&](int a, int b) {
+      return alpha_[object->tag_][a] > alpha_[object->tag_][b];
+    });
 
     // 按块写入数据
     auto write_by_block = [&]() {
       for (auto od : sf) {
         auto &disk = disks_[od];
-
-        if constexpr (config::WritePolicy() == config::compact) {
-          if ((kth > 0 && disk.free_size_ - seg_mgr_->FreeBlockSize(od) < object->size_) || (kth == 0 && disk.free_size_ < object->size_)) {
-            continue;
+        if constexpr (config::WritePolicy() == config::WRITEPOLICIES::compact){
+          if (kth == 0 && (kth > 0 && disk.free_size_ < object->size_ || kth != 0 && (disk.GetFreeSize() - seg_mgr_->FreeBlockSize(od) < object->size_)) || (kth == 0 && disk.free_size_ < object->size_)) {
+            continue; // 如果磁盘空间不足，跳过
           }
-        } else if constexpr (config::WritePolicy() == config::none) {
+        }
+        else {
           if (disk.free_size_ < object->size_) {
-            continue;
+            continue; // 如果磁盘空间不足，跳过
           }
-        } else {
-          assert(false);
         }
         bool exist = false;
         for (int i = 0; i < kth; i++) {
@@ -78,20 +85,13 @@ public:
           for (int j = 0; j < object->size_; j++) {
             if (config::WritePolicy() == config::compact) {
               int block_id;
-              if (kth > 0) {
-                block_id =
-                    disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od], oid, j);
-              } // 写入数据到磁盘
-              else {
-                block_id = disk.WriteBlock(0, oid, j);
-              }                                  // 写入数据到磁盘}
-              object->tdisk_[kth][j] = block_id; // 记录块 ID
-              for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
-                auto ptr = seg_mgr_->FindBlock(i, od, block_id);
-                if (ptr != nullptr) {
-                  seg_mgr_->Write(ptr, 1); // 更新段信息
-                }
-              }
+              if(kth>0)
+              {block_id = disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od],
+                                              oid, j);} // 写入数据到磁盘
+              else
+              {block_id = disk.WriteBlock(0,
+                oid, j);} // 写入数据到磁盘}       
+              object->tdisk_[kth][j] = block_id;// 记录块 ID
             } else {
               auto block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
               object->tdisk_[kth][j] = block_id;          // 记录块 ID
@@ -114,23 +114,24 @@ public:
         auto &disk = disks_[od];
 
         {
-          if (disk.free_size_ < object->size_) {
+        if (disk.free_size_ < object->size_) {
             continue;
           }
-        }
+        } 
         bool exist = false;
         for (int i = 0; i < kth; i++) {
           exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
         }
         if (!exist) {
           object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
-          for (int j = 0; j < object->size_; j++) {
+          for (int j = 0; j < object->size_; j++) { 
             {
               auto block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
               object->tdisk_[kth][j] = block_id;          // 记录块 ID
               for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
                 auto ptr = seg_mgr_->FindBlock(i, od, block_id);
                 if (ptr != nullptr) {
+                  assert(false);
                   seg_mgr_->Write(ptr, 1); // 更新段信息
                 }
               }
@@ -144,65 +145,33 @@ public:
 
     // 按段写入数据
     auto write_by_segment = [&]() {
-      int tag = object->tag_; // 获取对象的标签
-      for (auto od : sf) {
-        auto &disk = disks_[od];
-        auto ptr = seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
-        if (ptr == nullptr) {
-          continue; // 如果没有找到合适的段，跳过
+      for (auto tag : tag_sf_) {
+        for (auto od : sf) {
+          auto &disk = disks_[od];
+          auto ptr = seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
+          if (ptr == nullptr) {
+            continue; // 如果没有找到合适的段，跳过
+          }
+          bool exist = false;
+          for (int i = 0; i < kth; i++) {
+            exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
+          }
+          if (exist) {
+            continue; // 如果已存在副本，跳过
+          }
+          object->idisk_[kth] = od; // 设置副本所在磁盘
+          for (int j = 0; j < object->size_; j++) {
+            object->tdisk_[kth][j] =
+                disk.WriteBlock(ptr->disk_addr_, oid, j); // 写入数据到段
+          }
+          seg_mgr_->Write(ptr, object->size_); // 更新段信息
+          return true;                         // 写入成功
         }
-        bool exist = false;
-        for (int i = 0; i < kth; i++) {
-          exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
-        }
-        if (exist) {
-          continue; // 如果已存在副本，跳过
-        }
-        object->idisk_[kth] = od; // 设置副本所在磁盘
-        for (int j = 0; j < object->size_; j++) {
-          object->tdisk_[kth][j] =
-              disk.WriteBlock(ptr->disk_addr_, oid, j); // 写入数据到段
-        }
-        seg_mgr_->Write(ptr, object->size_); // 更新段信息
-        return true;                         // 写入成功
-      }
-      return false; // 写入失败
-    };
-    // 从段内写入一整块
-    auto write_by_segment_whole = [&]() {
-      int tag = object->tag_; // 获取对象的标签
-      for (auto od : sf) {
-        auto &disk = disks_[od];
-        auto ptr = seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
-        if (ptr == nullptr) {
-          continue; // 如果没有找到合适的段，跳过
-        }
-        bool exist = false;
-        for (int i = 0; i < kth; i++) {
-          exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
-        }
-        if (exist) {
-          continue; // 如果已存在副本，跳过
-        }
-        auto [pos, maxlen] =
-            disk.GetMaxLen(ptr->disk_addr_, ptr->disk_addr_ + ptr->capacity_);
-        if (maxlen < object->size_) {
-          continue;
-        }
-        object->idisk_[kth] = od; // 设置副本所在磁盘
-        for (int j = 0; j < object->size_; j++) {
-          object->tdisk_[kth][j] = disk.WriteBlock(pos, oid, j); // 写入数据到段
-        }
-        seg_mgr_->Write(ptr, object->size_); // 更新段信息
-        return true;                         // 写入成功
       }
       return false; // 写入失败
     };
 
     // 优先按段写入，如果失败则按块写入
-    if (kth == 0 && write_by_segment_whole()) {
-      return true;
-    }
     if (kth == 0 && write_by_segment()) {
       return true;
     }
@@ -275,12 +244,10 @@ public:
     if (task_k.empty()) {
       return;
     }
-    auto [target, hot_cnt] = scheduler_->GetHotRT(disk_id);
     // 如果最近的任务都太远，就直接 jump
-    if (ReadDist(disk_id, task_k[0]) >= life_ ||
-        hot_cnt - scheduler_->GetCntRT(disk_id, disk.itr_) >=
-                config::JUMP_THRESHOLD &&
-            ReadDist(disk_id, task_k[0]) >= config::DISK_READ_FETCH_LEN / 10) {
+    int target=scheduler_->GetRT(disk_id, disk.GetItr());
+    if (ReadDist(disk_id, task_k[0]) >= life_ ) {
+      
       disk.Jump(time, target);               // 跳转到目标位置
       printer::ReadSetJump(disk_id, target); // 打印跳转信息
       return;
@@ -461,10 +428,12 @@ public:
 
   auto GetDisk(int disk_id) -> Disk & { return disks_[disk_id]; } // 获取磁盘
 private:
-  const int disk_cnt_;      // 磁盘数量
-  const int life_;          // 磁盘生命周期
-  ObjectPool *obj_pool_;    // 对象池
-  Scheduler *scheduler_;    // 调度器
-  SegmentManager *seg_mgr_; // 段管理器
-  std::vector<Disk> disks_; // 磁盘列表
+  const int disk_cnt_;                 // 磁盘数量
+  const int life_;                     // 磁盘生命周期
+  ObjectPool *obj_pool_;               // 对象池
+  Scheduler *scheduler_;               // 调度器
+  SegmentManager *seg_mgr_;            // 段管理器
+  std::vector<Disk> disks_;            // 磁盘列表
+  std::vector<std::vector<db>> alpha_; // 相似矩阵
+  std::vector<int> tag_sf_; // 标签排序
 };

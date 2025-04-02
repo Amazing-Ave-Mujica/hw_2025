@@ -21,8 +21,8 @@ int timeslice = 0;
 auto main() -> int {
 
 #ifdef LLDB
-  freopen(R"(D:\Documents\hw_2025\data\sample.in)", "r", stdin);
-  freopen(R"(D:\Documents\hw_2025\log.txt)", "w", stdout);
+  freopen(R"(/home/fiatiustitia/HW-2025/data/sample_practice.in)", "r", stdin);
+  freopen(R"(/home/fiatiustitia/HW-2025/log/code_craft.log)", "w", stdout);
 #endif
 
   std::ios::sync_with_stdio(false);
@@ -64,7 +64,7 @@ auto main() -> int {
   ObjectPool pool(t);
   Scheduler none(&pool, n, t, v);
   SegmentManager seg_mgr(m, n, v, best_solution, tsp);
-  DiskManager dm(&pool, &none, &seg_mgr, n, v, g);
+  DiskManager dm(&pool, &none, &seg_mgr,alpha, n,m, v, g);
   TopScheduler tes(&timeslice, &none, &pool, &dm);
 
   // 同步函数
