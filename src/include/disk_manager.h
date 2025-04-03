@@ -8,6 +8,7 @@
 #include "segment.h"
 #include <algorithm>
 #include <cassert>
+#include <functional>
 #include <numeric>
 #include <queue>
 #include <random>
@@ -66,55 +67,61 @@ public:
       return alpha_[object->tag_][a] > alpha_[object->tag_][b];
     });
 
+    auto write_to_disk = [&](int od,
+                             const std::function<bool(int, int, int)> &check,
+                             const std::function<bool(int, int, int)> &write) {
+      if (!check(od, oid, kth)) {
+        return false; // 如果检查失败，返回 false
+      }
+      auto f1 = write(od, oid, kth);
+      assert(f1);
+      return true;
+    };
+
     // 按块写入数据
-    auto write_by_block = [&]() {
-      for (auto od : sf) {
-        auto &disk = disks_[od];
-        if constexpr (config::WritePolicy() == config::WRITEPOLICIES::compact) {
-          if (kth == 0 && (kth > 0 && disk.free_size_ < object->size_ ||
-                           kth != 0 && (disk.GetFreeSize() -
-                                            seg_mgr_->FreeBlockSize(od) <
-                                        object->size_)) ||
-              (kth == 0 && disk.free_size_ < object->size_)) {
-            continue; // 如果磁盘空间不足，跳过
-          }
-        } else {
-          if (disk.free_size_ < object->size_) {
-            continue; // 如果磁盘空间不足，跳过
-          }
+
+    auto check_by_block = [&](int od, int oid, int kth) {
+      auto &disk = disks_[od];
+      if constexpr (config::WritePolicy() == config::WRITEPOLICIES::compact) {
+        if ((kth != 0 && (disk.GetFreeSize() - seg_mgr_->FreeBlockSize(od) <
+                          object->size_)) ||
+            (kth == 0 && disk.free_size_ < object->size_)) {
+          return false; // 如果磁盘空间不足，返回 false
         }
-        bool exist = false;
-        for (int i = 0; i < kth; i++) {
-          exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
-        }
-        if (!exist) {
-          object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
-          for (int j = 0; j < object->size_; j++) {
-            if (config::WritePolicy() == config::compact) {
-              int block_id;
-              if (kth > 0) {
-                block_id =
-                    disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od], oid, j);
-              } // 写入数据到磁盘
-              else {
-                block_id = disk.WriteBlock(0, oid, j);
-              }                                  // 写入数据到磁盘}
-              object->tdisk_[kth][j] = block_id; // 记录块 ID
-            } else {
-              auto block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
-              object->tdisk_[kth][j] = block_id;          // 记录块 ID
-              for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
-                auto ptr = seg_mgr_->FindBlock(i, od, block_id);
-                if (ptr != nullptr) {
-                  seg_mgr_->Write(ptr, 1); // 更新段信息
-                }
-              }
-            }
-          }
-          return true; // 写入成功
+      } else {
+        if (disk.free_size_ < object->size_) {
+          return false; // 如果磁盘空间不足，返回 false
         }
       }
-      return false; // 写入失败
+      bool exist = false;
+      for (int i = 0; i < kth; i++) {
+        exist |= (object->idisk_[i] == disk.disk_id_); // 检查是否已存在副本
+      }
+      return !exist; // 如果不存在副本，返回 true
+    };
+
+    auto write_by_block_ = [&](int od, int oid, int kth) {
+      auto &disk = disks_[od];
+      object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
+      for (int j = 0; j < object->size_; j++) {
+        if constexpr (config::WritePolicy() == config::compact) {
+          int block_id =
+              (kth > 0)
+                  ? disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od], oid, j)
+                  : disk.WriteBlock(0, oid, j);
+          object->tdisk_[kth][j] = block_id; // 记录块 ID
+        } else {
+          auto block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
+          object->tdisk_[kth][j] = block_id;          // 记录块 ID
+          for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
+            auto ptr = seg_mgr_->FindBlock(i, od, block_id);
+            if (ptr != nullptr) {
+              seg_mgr_->Write(ptr, 1); // 更新段信息
+            }
+          }
+        }
+      }
+      return true;
     };
 
     auto write_by_block_forced = [&]() {
@@ -440,25 +447,26 @@ public:
   auto GarbageCollection(int k) -> void {
     if constexpr (config::WritePolicy() == config::WRITEPOLICIES::compact) {
       std::vector<std::vector<int>> idx(disk_cnt_);
-      for(int i = 0,len = tag_sf_.size();i < len;i++){
-        for (auto &s : seg_mgr_->segs_[i]){
+      for (int i = 0, len = tag_sf_.size(); i < len; i++) {
+        for (auto &s : seg_mgr_->segs_[i]) {
           idx[s.disk_id_].push_back(s.disk_addr_);
         }
       }
-      for(int i = 0;i < disk_cnt_;i++){
+      for (int i = 0; i < disk_cnt_; i++) {
         idx[i].emplace_back(seg_mgr_->seg_disk_capacity_[i]);
       }
-      for(auto & v : idx){
-        std::sort(v.begin(),v.end());
+      for (auto &v : idx) {
+        std::sort(v.begin(), v.end());
       }
-      std::queue<std::pair<int,int>> frags;
-      for(int i = 0;i < disk_cnt_;i++){
+      std::queue<std::pair<int, int>> frags;
+      for (int i = 0; i < disk_cnt_; i++) {
         auto &disk = disks_[i];
-        for(int j = 0;j < seg_mgr_->seg_disk_capacity_[i];j++){
+        for (int j = 0; j < seg_mgr_->seg_disk_capacity_[i]; j++) {
           int oid = disk.GetStorageAt(j).first;
-          int seg_tag = (std::lower_bound(idx[i].begin(),idx[i].end(),j) - idx[i].begin());
-          if ((obj_pool_->GetObjAt(oid)->tag_) != seg_tag){
-            frags.emplace(i,j);
+          int seg_tag = (std::lower_bound(idx[i].begin(), idx[i].end(), j) -
+                         idx[i].begin());
+          if ((obj_pool_->GetObjAt(oid)->tag_) != seg_tag) {
+            frags.emplace(i, j);
           }
         }
       }
