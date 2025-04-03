@@ -116,6 +116,13 @@ auto main() -> int {
     }
   };
 
+  auto gc_op = [&]() {
+    std::string tmp;
+    std::cin >> tmp >> tmp;
+    dm.GarbageCollection(k); // 垃圾回收
+    printer::GCPrint(n);
+  };
+
   (std::cout << "OK\n").flush(); // 输出初始化完成信息
   // 主循环，处理每个时间片
   for (timeslice = 1; timeslice <= t + 105; timeslice++) {
@@ -126,8 +133,9 @@ auto main() -> int {
     tes.Read();  // 执行读取操作
 
     if (timeslice % 1800 == 0){
-      dm.GarbageCollection(k); // 垃圾回收
+      gc_op(); // 垃圾回收
     }
+    printer::PrintRead(n); // 打印读取信息
 
 #ifdef ISCERR
     if (timeslice == t + 105) {
@@ -138,6 +146,5 @@ auto main() -> int {
       }
     }
 #endif
-    printer::PrintRead(n); // 打印读取信息
   }
 }

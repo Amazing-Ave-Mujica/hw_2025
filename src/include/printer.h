@@ -4,7 +4,6 @@
 #define _PRINTER_H
 #include "object.h"
 #include <cassert>
-#include <cstddef>
 #include <iostream>
 #include <string>
 
@@ -115,7 +114,7 @@ auto PrintWrite(ObjectPool &obj_pool) -> void {
     std::cout << buf[WRITE][i] + 1 << '\n'; // 打印写入对象的 ID（从 1 开始）
     auto obj = obj_pool.GetObjAt(buf[WRITE][i]); // 获取对象
     for (int j = 0; j < 3; j++) {                // 遍历对象的每个副本
-      std::cout << obj->idisk_[j] + 1 << ' '; // 打印副本所在的磁盘编号
+      std::cout << (obj->idisk_[j] >= config::REAL_DISK_CNT ? obj->idisk_[j] - config::REAL_DISK_CNT : obj->idisk_[j]) + 1 << ' '; // 打印副本所在的磁盘编号
       for (auto it : obj->tdisk_[j]) {
         std::cout << it + 1 << ' '; // 打印副本的块编号
       }
