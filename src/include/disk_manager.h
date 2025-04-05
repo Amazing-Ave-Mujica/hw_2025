@@ -69,13 +69,11 @@ public:
 
     auto write_to_disk = [&](int od, const std::function<bool(int, int)> &check,
                              const std::function<bool(int, int)> &write) {
-      if (!check(od, kth) || !check(od + disk_cnt_ / 2, kth)) {
+      if (!check(od, kth)) {
         return false; // 如果检查失败，返回 false
       }
       auto f1 = write(od, kth);
       assert(f1);
-      auto f2 = write(od + config::REAL_DISK_CNT, kth);
-      assert(f2);
       return true;
     };
 
@@ -103,6 +101,7 @@ public:
 
     auto write_by_block = [&](int od, int kth) {
       auto &disk = disks_[od];
+      auto &mirrored_disk = disks_[od + disk_cnt_ / 2];
       object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
       for (int j = 0; j < object->size_; j++) {
         int block_id = -1;
@@ -111,10 +110,16 @@ public:
               (kth > 0)
                   ? disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od], oid, j)
                   : disk.WriteBlock(0, oid, j);
+          auto mirroed_block_id = (kth > 0)
+          ? mirrored_disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od], oid, j)
+          : mirrored_disk.WriteBlock(0, oid, j);
+          assert(mirroed_block_id == block_id);
           object->tdisk_[kth][j] = block_id; // 记录块 ID
 
         } else {
           block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
+          auto mirroed_block_id = mirrored_disk.WriteBlock(0, oid, j); // 写入数据到磁盘
+          assert(mirroed_block_id == block_id);
           object->tdisk_[kth][j] = block_id;     // 记录块 ID
         }
         for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
@@ -141,10 +146,13 @@ public:
 
     auto write_by_block_forced = [&](int od, int kth) {
       auto &disk = disks_[od];
+      auto &mirrored_disk = disks_[od + disk_cnt_ / 2];
       object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
       for (int j = 0; j < object->size_; j++) {
         {
           auto block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
+          auto mirroed_block_id = mirrored_disk.WriteBlock(0, oid, j);
+          assert(mirroed_block_id == block_id);
           object->tdisk_[kth][j] = block_id;          // 记录块 ID
           for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
             auto ptr = seg_mgr_->FindBlock(i, od, block_id);
@@ -173,12 +181,15 @@ public:
 
     auto write_by_segment = [&](int od, int kth) {
       auto &disk = disks_[od];
+      auto &mirroed_disk = disks_[od + disk_cnt_ / 2];
       auto ptr =
           seg_mgr_->Find(object->tag_, od, object->size_); // 查找合适的段
       object->idisk_[kth] = od; // 设置副本所在磁盘
       for (int j = 0; j < object->size_; j++) {
-        object->tdisk_[kth][j] =
-            disk.WriteBlock(ptr->disk_addr_, oid, j); // 写入数据到段
+        auto& block_id = object->tdisk_[kth][j];
+        block_id = disk.WriteBlock(ptr->disk_addr_, oid, j); // 写入数据到段
+        auto mirroed_block_id = mirroed_disk.WriteBlock(ptr->disk_addr_, oid, j);
+        assert(mirroed_block_id == block_id);
       }
       seg_mgr_->Write(ptr, object->size_); // 更新段信息
       return true;                         // 写入成功
