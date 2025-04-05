@@ -6,6 +6,7 @@
 #include "printer.h"
 #include "task.h"
 #include <algorithm>
+#include <cassert>
 #include <list>
 #include <memory>
 #include <set>
@@ -323,11 +324,11 @@ public:
     while (!req_list_.empty() && req_list_.front()->timestamp_ <= lim) {
       const auto &req = req_list_.front();
       // 如果对象之前没有被删除，到对应磁盘删除读请求
-      if (obj_pool_->IsValid(req->oid_)) {
+      if (obj_pool_->IsValid(req->oid_) && req.use_count() > 1) {
         for (const auto& [disk_id, block_id] : req->work_) {
           q_[disk_id].RemoveOnce(block_id);
         }
-        printer::ReadAddBusy(req->tid_);
+        printer::ReadAddBusy(req->tid_); // 添加读取请求
       }
       req_list_.pop_front();
     }

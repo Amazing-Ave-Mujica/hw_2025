@@ -220,8 +220,6 @@ public:
 
     seg_mgr_->Delete(tag, disk_id, block_id); // 删除段信息
     disks_[disk_id].Delete(block_id);         // 删除磁盘块数据
-    
-    seg_mgr_->Delete(tag, disk_id + config::REAL_DISK_CNT , block_id); // 删除段信息
     disks_[disk_id + config::REAL_DISK_CNT].Delete(block_id);         // 删除磁盘块数据
   }
 

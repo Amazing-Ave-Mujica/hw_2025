@@ -10,11 +10,13 @@
 #include "include/top_scheduler.h"
 #include "include/tsp.h"
 #include <algorithm>
+#include <cassert>
 #include <cstdio>
 #include <iostream>
 #include <limits>
 #include <numeric>
 #include <thread>
+
 
 int timeslice = 0;
 
@@ -119,7 +121,7 @@ auto main() -> int {
   auto gc_op = [&]() {
     std::string tmp;
     std::cin >> tmp >> tmp;
-    dm.GarbageCollection(k); // 垃圾回收
+    // dm.GarbageCollection(k); // 垃圾回收
     printer::GCPrint(n);
   };
 
@@ -132,12 +134,13 @@ auto main() -> int {
     read_op();   // 处理读取操作
     tes.Read();  // 执行读取操作
 
+    printer::PrintRead(n); // 打印读取信息
     if (timeslice % 1800 == 0){
       gc_op(); // 垃圾回收
     }
-    printer::PrintRead(n); // 打印读取信息
 
 #ifdef ISCERR
+    // std::cerr << "TIMESTAMP " << timeslice << '\n';
     if (timeslice == t + 105) {
       for (int i = 0; i < n; i++) {
         auto x = dm.GetDisk(i);

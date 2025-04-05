@@ -39,7 +39,7 @@ void Clean(int idx) {
     for(int & i : gc_top){
       i = 0; // 重置垃圾回收操作的索引
     }
-    
+    return;
   }
   top[idx] = 0;      // 重置缓冲区大小
   for (auto &op : ops) {
@@ -155,6 +155,7 @@ auto GCAdd(int disk_id,int id1,int id2){
 }
 
 auto GCPrint(int N){
+  std::cout << "GARBAGE COLLECTION\n";
   for(int i = 0;i < N;i++){
     std::cout << gc_top[i] << '\n';
     for(int j = 0;j < gc_top[i];j++){
