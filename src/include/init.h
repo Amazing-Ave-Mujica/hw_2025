@@ -119,12 +119,12 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
   if constexpr (config::WritePolicy() == config::compact) {
     for (int i = 0; i < m; i++) {
       if (i < m - 1) {
-        resource[i] = max_allocate[i] * (2*n * (v / 6)) /
+        resource[i] = max_allocate[i] * (n * (v / 3)) /
                       std::accumulate(max_allocate.begin(), max_allocate.end(),
                                       0); // 按比例分配资源
       } else {
         resource[i] =
-            2*n * (v / 6) - std::accumulate(resource.begin(), resource.end(),
+            n * (v / 3) - std::accumulate(resource.begin(), resource.end(),
                                           0); // 剩余资源分配给最后一个标签
       }
     }
@@ -156,13 +156,13 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
 
   // 初始化资源分配器并求解
   if constexpr (config::WritePolicy() == config::compact) {
-    ResourceAllocator ra(m, 2*n, v / 6, v / (3*m), resource, alpha);
-    ra.Solve(ISCERR);
-    return {ra.GetBestSolution(ISCERR), alpha};
+    ResourceAllocator ra(m, n, v / 3, v / (3*m), resource, alpha);
+    ra.Solve();
+    return {ra.GetBestSolution(), alpha};
   }
   ResourceAllocator ra(m, n, v, v / m, resource, alpha);
-  ra.Solve(ISCERR);
-  return {ra.GetBestSolution(ISCERR), alpha};
+  ra.Solve();
+  return {ra.GetBestSolution(), alpha};
 }
 
 auto InitTSP(int n, int m, const std::vector<std::vector<db>> &alpha,
