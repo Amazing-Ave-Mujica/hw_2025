@@ -57,8 +57,6 @@ public:
   // 返回值：是否插入成功
   auto Insert(int oid, int kth) -> bool {
 
-    throw std::runtime_error("不用再写 disk_id + disk_cnt");
-
     static std::mt19937 rng(config::RANDOM_SEED);
     auto object = obj_pool_->GetObjAt(oid); // 获取对象
 
@@ -115,16 +113,10 @@ public:
               (kth > 0)
                   ? disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od], oid, j)
                   : disk.WriteBlock(0, oid, j);
-          auto mirroed_block_id = (kth > 0)
-          ? mirrored_disk.WriteBlock(seg_mgr_->seg_disk_capacity_[od], oid, j)
-          : mirrored_disk.WriteBlock(0, oid, j);
-          assert(mirroed_block_id == block_id);
           object->tdisk_[kth][j] = block_id; // 记录块 ID
 
         } else {
           block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
-          auto mirroed_block_id = mirrored_disk.WriteBlock(0, oid, j); // 写入数据到磁盘
-          assert(mirroed_block_id == block_id);
           object->tdisk_[kth][j] = block_id;     // 记录块 ID
         }
         for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
@@ -151,13 +143,10 @@ public:
 
     auto write_by_block_forced = [&](int od, int kth) {
       auto &disk = disks_[od];
-      auto &mirrored_disk = disks_[od + (disk_cnt_ / 2)];
       object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
       for (int j = 0; j < object->size_; j++) {
         {
           auto block_id = disk.WriteBlock(0, oid, j); // 写入数据到磁盘
-          auto mirroed_block_id = mirrored_disk.WriteBlock(0, oid, j);
-          assert(mirroed_block_id == block_id);
           object->tdisk_[kth][j] = block_id;          // 记录块 ID
           for (int i = 0, len = seg_mgr_->segs_.size(); i < len; i++) {
             auto ptr = seg_mgr_->FindBlock(i, od, block_id);
@@ -186,15 +175,12 @@ public:
 
     auto write_by_segment = [&](int od, int kth) {
       auto &disk = disks_[od];
-      auto &mirroed_disk = disks_[od + (disk_cnt_ / 2)];
       auto ptr =
           seg_mgr_->Find(object->tag_, od, object->size_); // 查找合适的段
       object->idisk_[kth] = od; // 设置副本所在磁盘
       for (int j = 0; j < object->size_; j++) {
         auto& block_id = object->tdisk_[kth][j];
         block_id = disk.WriteBlock(ptr->disk_addr_, oid, j); // 写入数据到段
-        auto mirroed_block_id = mirroed_disk.WriteBlock(ptr->disk_addr_, oid, j);
-        assert(mirroed_block_id == block_id);
       }
       seg_mgr_->Write(ptr, object->size_); // 更新段信息
       return true;                         // 写入成功
@@ -221,11 +207,8 @@ public:
   // - disk_id: 磁盘 ID
   // - block_id: 块 ID
   void Delete(int tag, int disk_id, int block_id) {
-    throw std::runtime_error("不用再删除disk_id + disk_cnt");
-
     seg_mgr_->Delete(tag, disk_id, block_id); // 删除段信息
     disks_[disk_id].Delete(block_id);         // 删除磁盘块数据
-    disks_[disk_id + config::REAL_DISK_CNT].Delete(block_id);         // 删除磁盘块数据
   }
 
   // 从指定磁盘读取数据
