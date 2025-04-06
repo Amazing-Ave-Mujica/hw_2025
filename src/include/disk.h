@@ -155,7 +155,9 @@ public:
 
   auto GetItr() -> int { return itr_; }
   
-  auto GetIterPre() -> int { return (itr_ - 1 + capacity_) % capacity_; }
+  auto GetIterPre() -> int {
+    return itr_ == 0 ? capacity_ - 1 : itr_ - 1;
+  }
 
   auto GetReadCount() -> int { return read_count_; } // 获取读取次数
 

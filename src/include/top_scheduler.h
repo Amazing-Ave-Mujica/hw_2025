@@ -116,7 +116,7 @@ public:
   // 执行读取操作
   void Read() {
     scheduler_->PopOldReqs();
-    for (int i = 0; i < disk_mgr_->GetDiskCnt(); i++) {
+    for (int i = 0; i < (disk_mgr_->GetDiskCnt() << 1); i++) {
       disk_mgr_->Read(i); // 调用磁盘管理器的读取操作
     }
   }
