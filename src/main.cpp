@@ -22,9 +22,14 @@ int timeslice = 0;
 
 auto main() -> int {
 
+// #ifdef LLDB
+//   freopen(R"(/home/fiatiustitia/HW-2025/data/sample_practice.in)", "r", stdin);
+//   freopen(R"(/home/fiatiustitia/HW-2025/log/code_craft.log)", "w", stdout);
+// #endif
+
 #ifdef LLDB
-  freopen(R"(/home/fiatiustitia/HW-2025/data/sample_practice.in)", "r", stdin);
-  freopen(R"(/home/fiatiustitia/HW-2025/log/code_craft.log)", "w", stdout);
+  freopen(R"(D:\Documents\hw_2025\data\sample_practice.in)", "r", stdin);
+  freopen(R"(D:\Documents\hw_2025\log.txt)", "w", stdout);
 #endif
 
   std::ios::sync_with_stdio(false);

@@ -242,28 +242,28 @@ public:
         if (time >= rd_cost) {
           auto [oid, y] = disk.GetStorageAt(disk.itr_);
           disk.Read(time);                  // 执行读取操作
-          printer::ReadAddRead(disk_id, 1,(disk_id >= config::REAL_DISK_CNT ? 1 : 0)); // 打印读取信息
+          printer::ReadAddRead(disk_id, 1); // 打印读取信息
           if (oid >= 0) {
             scheduler_->Update(oid, y); // 更新调度器信息
           }
         } else if (rd_cost >= 64 && time > 0) {
           disk.Pass(time);                  // 跳过当前块
-          printer::ReadAddPass(disk_id, 1,(disk_id >= config::REAL_DISK_CNT ? 1 : 0)); // 打印跳过信息
+          printer::ReadAddPass(disk_id, 1); // 打印跳过信息
         } else {
           break;
         }
       } else {
         disk.Pass(time);                  // 跳过当前块
-        printer::ReadAddPass(disk_id, 1,(disk_id >= config::REAL_DISK_CNT ? 1 : 0)); // 打印跳过信息
+        printer::ReadAddPass(disk_id, 1); // 打印跳过信息
       }
     }
   }
   void Read(int disk_id) {
     int time = life_; // 初始化读取时间
 
-#ifdef SINGLE_READ_MODE
+    #ifdef SINGLE_READ_MODE
     ReadSingle(disk_id, time);
-#else
+    #else
     auto &disk = disks_[disk_id];
 
     // 读取最近的 k 个任务，按距离升序存储
@@ -278,7 +278,7 @@ public:
     if (ReadDist(disk_id, task_k[0]) >= life_) {
 
       disk.Jump(time, target);               // 跳转到目标位置
-      printer::ReadSetJump(disk_id, target,(disk_id >= config::REAL_DISK_CNT ? 1 : 0)); // 打印跳转信息
+      printer::ReadSetJump(disk_id, target); // 打印跳转信息
       return;
     }
 
@@ -401,7 +401,7 @@ public:
     // 一个也读不出来直接 jump
     if (path.empty()) {
       disk.Jump(time, target);               // 跳转到目标位置
-      printer::ReadSetJump(disk_id, target,(disk_id >= config::REAL_DISK_CNT ? 1 : 0)); // 打印跳转信息
+      printer::ReadSetJump(disk_id, target); // 打印跳转信息
       return;
     }
 
@@ -410,7 +410,7 @@ public:
       path.pop_back();
       int len = two_block_dist(task_k[i - 1], task_k[i]) - 1;
       if (op == 1) {
-        printer::ReadAddRead(disk_id, len,(disk_id >= config::REAL_DISK_CNT ? 1 : 0));
+        printer::ReadAddRead(disk_id, len);
         while (len-- > 0) {
           auto [oid, y] = disk.GetStorageAt(disk.itr_);
           scheduler_->Update(oid, y); // 更新调度器信息
@@ -418,13 +418,13 @@ public:
         }
       } else {
         disk.Pass(time, len);
-        printer::ReadAddPass(disk_id, len,(disk_id >= config::REAL_DISK_CNT ? 1 : 0));
+        printer::ReadAddPass(disk_id, len);
       }
 
       auto [oid, y] = disk.GetStorageAt(disk.itr_);
       scheduler_->Update(oid, y); // 更新调度器信息
       disk.Read(time);
-      printer::ReadAddRead(disk_id, 1,(disk_id >= config::REAL_DISK_CNT ? 1 : 0));
+      printer::ReadAddRead(disk_id, 1);
     }
 
     // 就算走不到下一个目标，也可以选择继续移动「方案选单」

@@ -57,7 +57,9 @@ void AddReadRequest(int RequestID) { buf[READ][top[READ]++] = RequestID; }
 // 参数：
 // - DiskNum: 磁盘编号
 // - cnt: 跳过的次数
-void ReadAddPass(int DiskNum, int cnt,int diskhead) {
+void ReadAddPass(int DiskNum, int cnt) {
+  int diskhead = static_cast<int>(DiskNum >= config::REAL_DISK_CNT);
+  DiskNum -= DiskNum >= config::REAL_DISK_CNT ? config::REAL_DISK_CNT : 0;
   for (int i = 0; i < cnt; i++) {
     ops[DiskNum][diskhead].push_back('p'); // 添加 'p' 表示跳过操作
   }
@@ -67,7 +69,9 @@ void ReadAddPass(int DiskNum, int cnt,int diskhead) {
 // 参数：
 // - DiskNum: 磁盘编号
 // - cnt: 读取的次数
-void ReadAddRead(int DiskNum, int cnt,int diskhead) {
+void ReadAddRead(int DiskNum, int cnt) {
+  int diskhead = static_cast<int>(DiskNum >= config::REAL_DISK_CNT);
+  DiskNum -= DiskNum >= config::REAL_DISK_CNT ? config::REAL_DISK_CNT : 0;
   for (int i = 0; i < cnt; i++) {
     ops[DiskNum][diskhead].push_back('r'); // 添加 'r' 表示读取操作
   }
@@ -77,7 +81,9 @@ void ReadAddRead(int DiskNum, int cnt,int diskhead) {
 // 参数：
 // - DiskNum: 磁盘编号
 // - DiskblockID: 跳转的块编号
-void ReadSetJump(int DiskNum, int DiskblockID,int diskhead) {
+void ReadSetJump(int DiskNum, int DiskblockID) {
+  int diskhead = static_cast<int>(DiskNum >= config::REAL_DISK_CNT);
+  DiskNum -= DiskNum >= config::REAL_DISK_CNT ? config::REAL_DISK_CNT : 0;
   ops[DiskNum][diskhead] = "j " + std::to_string(DiskblockID + 1); // 添加跳转操作
 }
 

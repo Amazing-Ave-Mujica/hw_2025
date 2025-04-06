@@ -36,22 +36,24 @@ public:
     assert(obj_pool_->IsValid(oid));        // 确保对象有效
     auto object = obj_pool_->GetObjAt(oid); // 获取对象
     int disk; // 选择读的磁盘
+    std::vector<std::pair<int, int>> v; // 候选磁盘列表
     if constexpr (config::WritePolicy() == config::none) {
-      std::vector<std::pair<int, int>> v; // 磁盘列表
       v.reserve(6);
       for (int i = 0; i < 3; i++) {
         v.emplace_back(object->idisk_[i], object->tdisk_[i][0]);
         v.emplace_back(object->idisk_[i] + config::REAL_DISK_CNT, object->tdisk_[i][0]);
       }
-      // 根据磁盘压力排序，选择压力最小的磁盘
-      std::sort(v.begin(), v.end(), [&](auto x, auto y) {
-        return disk_mgr_->GetStress(x.first, x.second) <
-               disk_mgr_->GetStress(y.first, y.second);
-      });
-      disk = v[0].first; // 选择压力最小的副本
     } else if constexpr (config::WritePolicy() == config::compact) {
-      disk = object->idisk_[0]; // 这是什么几把
+      v.reserve(2);
+      v.emplace_back(object->idisk_[0], object->tdisk_[0][0]);
+      v.emplace_back(object->idisk_[0] + config::REAL_DISK_CNT, object->tdisk_[0][0]);
     }
+    // 根据磁盘压力排序，选择压力最小的磁盘
+    std::sort(v.begin(), v.end(), [&](auto x, auto y) {
+      return disk_mgr_->GetStress(x.first, x.second) <
+             disk_mgr_->GetStress(y.first, y.second);
+    });
+    disk = v[0].first; // 选择压力最小的副本
 
     int x;
     for (int i = 0; i < 3; i++) {
