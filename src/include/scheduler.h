@@ -314,7 +314,7 @@ public:
     for (int i = 0; i < 3; i++) {
       int disk_id = object->idisk_[i];
       q_[disk_id].Remove(object->tdisk_[i][y]); // 从读取队列中移除块
-      q_[disk_id].Remove(object->tdisk_[i][y] + config::REAL_DISK_CNT); // 镜像磁盘也删了
+      q_[disk_id + config::REAL_DISK_CNT].Remove(object->tdisk_[i][y]); // 镜像磁盘也删了
     }
     task_mgr_[oid].Update(y); // 更新任务状态
   }
