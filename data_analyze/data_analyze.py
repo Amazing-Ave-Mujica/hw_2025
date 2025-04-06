@@ -9,8 +9,8 @@ def read_data(filename):
     读取数据文件并返回解析后的内容。
     """
     with open(filename, 'r') as file:
-        # 读取第一行的 T, M, N, V, G
-        T, M, N, V, G = map(int, file.readline().split())
+        # 读取第一行的 T, M, N, V, G,K
+        T, M, N, V, G,K = map(int, file.readline().split())
         
         # 计算每行的列数
         cols_per_row = math.ceil(T / 1800)
@@ -23,42 +23,15 @@ def read_data(filename):
         
         # 初始化变量
         max_sum = 0
-        current_sum = 0
-        obj_size_map = {}  # 用于存储 obj_id 和对应的 obj_size
-        obj_tag_map={}  # 用于存储 obj_id 和对应的 obj_label
-        current_sum=[0 for _ in range(M+1)]
         max_sum=[0 for _ in range(M+1)]
-        obj_read_map = {i: [] for i in range(1, M + 1)}  # 用于记录每个 obj_tag 的读取活动
-
-        # 解析每个时间片的数据
-        for time_slice in range(T + 105):  # T+105 个时间片
-            timestamp=file.readline()
-            # 读取删除操作
-            n_delete = int(file.readline().strip())
-            for _ in range(n_delete):
-                obj_id = int(file.readline().strip())  # 删除对象编号
-                if obj_id in obj_size_map:
-                    current_sum[obj_tag_map[obj_id]] -= obj_size_map[obj_id]  # 减去对应的 obj_size
-                    del obj_size_map[obj_id]  # 从字典中移除该对象
-
-            # 读取写入操作
-            n_write = int(file.readline().strip())
-            for _ in range(n_write):
-                obj_id, obj_size, obj_tag = map(int, file.readline().split())
-                obj_size_map[obj_id] = obj_size  # 存储 obj_id 和对应的 obj_size
-                obj_tag_map[obj_id] = obj_tag  # 存储 obj_id 和对应的 obj_label
-                current_sum[obj_tag] += obj_size  # 写入操作增加总大小
-
-            # 读取读取操作
-            n_read = int(file.readline().strip())
-            for _ in range(n_read):
-                req_id, obj_id = map(int, file.readline().split())
-                if obj_id in obj_tag_map:
-                    obj_tag = obj_tag_map[obj_id]
-                    obj_read_map[obj_tag].append((time_slice, obj_id))  # 记录读取活动
-            max_sum = [max(a, b) for a, b in zip(max_sum, current_sum)]
+        for i in range(M):
+            cur=0
+            for j in range(cols_per_row):
+                cur-=data[i][j]
+                cur+=data[i+M][j]
+                max_sum[i]=max(max_sum[i],cur)
     
-    return T, M, N, V, G, data, cols_per_row,sum(max_sum),obj_read_map
+    return T, M, N, V, G, data, cols_per_row,sum(max_sum)
 
 def plot_line_chart(x, y, title, xlabel, ylabel, filename, labels=None, colors=None):
     """
@@ -129,32 +102,7 @@ def plot_bar_chart(nv_value, max_sum, save_dir):
     plt.close()
     print(f"Bar chart saved as {bar_chart_filename}")
 
-def plot_read_activity(obj_read_map, T, save_dir, M):
-    """
-    绘制每个 obj_tag 的读取活动图表。
-    """
-    for obj_tag in range(1, M + 1):
-        # 提取当前 obj_tag 的读取活动
-        read_times = obj_read_map.get(obj_tag, [])
-        x = [time for time, _ in read_times]  # 时间片
-        y = [obj_id for _, obj_id in read_times]  # 读取的 obj_id
-
-        # 绘制图表
-        plt.figure(figsize=(10, 6))
-        plt.scatter(x, y, color='purple', alpha=0.7,s=1, label=f'Read Activity for obj_tag_{obj_tag}')
-        plt.xlabel('Time Slice')
-        plt.ylabel('Read obj_id')
-        plt.title(f'Read Activity for obj_tag_{obj_tag}')
-        plt.grid(True)
-        plt.legend()
-
-        # 保存图表
-        filename = os.path.join(save_dir, f'read_activity_obj_tag_{obj_tag}.png')
-        plt.savefig(filename)
-        plt.close()
-        print(f"Read activity chart saved as {filename}")
-
-def plot_graphs(T, M, N, V, G, data, cols_per_row,max_sum,obj_read_map, save_dir):
+def plot_graphs(T, M, N, V, G, data, cols_per_row,max_sum,save_dir):
     """
     主绘图函数，调用其他绘图功能。
     """
@@ -164,7 +112,6 @@ def plot_graphs(T, M, N, V, G, data, cols_per_row,max_sum,obj_read_map, save_dir
     # 绘制 change_of_label 图表
     plot_change_of_label_graphs(data, cols_per_row, save_dir, M)
     plot_bar_chart(N*V, max_sum, save_dir)
-    plot_read_activity(obj_read_map, T, save_dir, M)
 
 def main():
     """
@@ -172,9 +119,9 @@ def main():
     """
     # 设置命令行参数
     parser = argparse.ArgumentParser(description="Plot graphs from data file.")
-    parser.add_argument('--data_path', type=str, default="../data/sample_offical.in",
+    parser.add_argument('--data_path', type=str, default="./data/sample_practice.in",
                         help='Path to the input data file.')
-    parser.add_argument('--save_dir', type=str, default='./output',
+    parser.add_argument('--save_dir', type=str, default='./data_analyze/output',
                         help='Directory to save the output graphs.')
     args = parser.parse_args()
 
@@ -182,8 +129,8 @@ def main():
     os.makedirs(args.save_dir, exist_ok=True)
 
     # 读取数据并绘制图表
-    T, M, N, V, G, data, cols_per_row,max_sum,obj_read_map = read_data(args.data_path)
-    plot_graphs(T, M, N, V, G, data, cols_per_row,max_sum,obj_read_map, args.save_dir)
+    T, M, N, V, G, data, cols_per_row,max_sum = read_data(args.data_path)
+    plot_graphs(T, M, N, V, G, data, cols_per_row,max_sum, args.save_dir)
     print(f"Graphs saved successfully in {args.save_dir}!")
 
 if __name__ == "__main__":
