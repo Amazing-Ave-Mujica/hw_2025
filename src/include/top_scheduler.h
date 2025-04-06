@@ -85,7 +85,8 @@ public:
     assert(id == oid);                             // 确保对象 ID 一致
     scheduler_->NewTaskMgr(oid, size); // 创建新的任务管理器
     for (int i = 0; i < 3; i++) {
-      assert(disk_mgr_->Insert(oid, i)); // 将对象的副本插入磁盘
+      auto scc = disk_mgr_->Insert(oid, i);
+      assert(scc); // 将对象的副本插入磁盘
     }
     return oid; // 返回新对象的 ID
   }

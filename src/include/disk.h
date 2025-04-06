@@ -26,9 +26,7 @@ public:
     for (int i = 0; i < capacity_; i++) {
       free_block_idck_idck_.insert(i); // 将所有块的索引加入空闲块集合
     }
-    prev_is_rd_ = false;    // 初始化为非读取状态
     free_size_ = capacity_; // 空闲块数量等于总容量
-    read_count_ = 0;
   }
 
   // 写入数据到磁盘的空闲块
@@ -64,6 +62,50 @@ public:
     free_block_idck_idck_.insert(idx); // 将块重新加入空闲块集合
     ++free_size_;                      // 更新空闲块数量
   }
+
+  // 获取指定索引的存储块内容
+  auto GetStorageAt(int idx) -> std::pair<int, int> {
+    assert(idx >= 0 && idx < capacity_); // 确保索引合法
+    return storage_[idx];                // 返回存储块内容
+  }
+
+  /**
+   * @brief 计算从 idx 开始 长度为 len 的一段磁盘空间里最长连续段在哪里和有多长
+   * @param idx 起始编号
+   * @param len 表示长度
+   */
+  auto GetMaxLen(int idx = 0, int len = INT32_MAX) {
+    len = std::min(len, capacity_ - idx); // 确保长度不超过容量
+    int maxlen = 0;
+    int pos = 0; // 最大连续空闲块长度
+    for (int i = idx, cnt = 0; i < len; i++) {
+      cnt = (storage_[idx] == EMPTY_BLOCK) ? cnt + 1 : 0; // 计算连续空闲块
+      if (maxlen < cnt) {
+        maxlen = cnt;
+        pos = i - maxlen + 1;
+      }
+      maxlen = std::max(maxlen, cnt); // 更新最大长度
+    }
+    return std::pair(pos, maxlen); // 返回最大连续空闲块长度
+  }
+
+  auto GetFreeSize() -> int { return free_size_; }   // 获取空闲块数量
+private:
+  const int disk_id_;  // 磁盘 ID
+  const int capacity_; // 磁盘容量（块数）
+
+  int free_size_;                      // 当前空闲块数量
+  std::set<int> free_block_idck_idck_; // 空闲块集合
+
+  std::vector<std::pair<int, int>>
+      storage_; // 存储块，存储每个块的内容（对象 ID 和数据）
+};
+
+// 只有读需要用到
+class MirrorDisk {
+  friend class DiskManager;
+public:
+  MirrorDisk(Disk *disk, int capacity) : disk_(disk), capacity_(capacity) {}
 
   // 计算读取操作的时间成本
   auto ReadCost() -> int {
@@ -106,52 +148,23 @@ public:
     }
   }
 
-  // 获取当前迭代器位置
+  auto GetStorageAt(int idx) -> std::pair<int, int> {
+    return disk_->GetStorageAt(idx);
+  }
+
+
   auto GetItr() -> int { return itr_; }
-  // 获取当前迭代器的前一个位置
+  
   auto GetIterPre() -> int { return (itr_ - 1 + capacity_) % capacity_; }
 
-  // 获取指定索引的存储块内容
-  auto GetStorageAt(int idx) -> std::pair<int, int> {
-    assert(idx >= 0 && idx < capacity_); // 确保索引合法
-    return storage_[idx];                // 返回存储块内容
-  }
-
-  /**
-   * @brief 计算从 idx 开始 长度为 len 的一段磁盘空间里最长连续段在哪里和有多长
-   * @param idx 起始编号
-   * @param len 表示长度
-   */
-  auto GetMaxLen(int idx = 0, int len = INT32_MAX) {
-    len = std::min(len, capacity_ - idx); // 确保长度不超过容量
-    int maxlen = 0;
-    int pos = 0; // 最大连续空闲块长度
-    for (int i = idx, cnt = 0; i < len; i++) {
-      cnt = (storage_[idx] == EMPTY_BLOCK) ? cnt + 1 : 0; // 计算连续空闲块
-      if (maxlen < cnt) {
-        maxlen = cnt;
-        pos = i - maxlen + 1;
-      }
-      maxlen = std::max(maxlen, cnt); // 更新最大长度
-    }
-    return std::pair(pos, maxlen); // 返回最大连续空闲块长度
-  }
-
-  auto GetFreeSize() -> int { return free_size_; }   // 获取空闲块数量
   auto GetReadCount() -> int { return read_count_; } // 获取读取次数
-private:
-  const int disk_id_;  // 磁盘 ID
-  const int capacity_; // 磁盘容量（块数）
 
+private:
+  const int capacity_; // 磁盘容量（块数）
+  Disk *disk_;
   // 迭代器
   int itr_{};        // 当前迭代器位置
-  int prev_rd_cost_; // 上一次读取操作的成本
-  bool prev_is_rd_;  // 上一次操作是否为读取
-  int read_count_;   // 读取次数
-
-  int free_size_;                      // 当前空闲块数量
-  std::set<int> free_block_idck_idck_; // 空闲块集合
-
-  std::vector<std::pair<int, int>>
-      storage_; // 存储块，存储每个块的内容（对象 ID 和数据）
+  int prev_rd_cost_{}; // 上一次读取操作的成本
+  bool prev_is_rd_{false};  // 上一次操作是否为读取
+  int read_count_{};   // 读取次数
 };

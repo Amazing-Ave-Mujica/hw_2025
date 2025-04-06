@@ -33,12 +33,17 @@ public:
   DiskManager(ObjectPool *obj_pool, Scheduler *scheduler,
               SegmentManager *seg_mgr, std::vector<std::vector<db>> alpha,
               int N, int M, int V, int G)
-      : disk_cnt_(N + N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler),
+      : disk_cnt_(N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler),
         alpha_(std::move(alpha)), seg_mgr_(seg_mgr), tag_sf_(M) {
     std::iota(tag_sf_.begin(), tag_sf_.end(), 0);
     disks_.reserve(disk_cnt_); // 预留磁盘数量的空间
+    mirror_disks_.reserve(disk_cnt_ + disk_cnt_);
     for (int i = 0; i < disk_cnt_; i++) {
       disks_.emplace_back(i, V); // 初始化每个磁盘
+      mirror_disks_.emplace_back(&disks_[i], V);
+    }
+    for (int i = 0; i < disk_cnt_; i++) {
+      mirror_disks_.emplace_back(&disks_[i], V);
     }
   }
 
@@ -52,7 +57,7 @@ public:
   // 返回值：是否插入成功
   auto Insert(int oid, int kth) -> bool {
 
-    // throw std::runtime_error("同时写到 disk_id, disk_id + disk_cnt");
+    throw std::runtime_error("不用再写 disk_id + disk_cnt");
 
     static std::mt19937 rng(config::RANDOM_SEED);
     auto object = obj_pool_->GetObjAt(oid); // 获取对象
@@ -216,7 +221,7 @@ public:
   // - disk_id: 磁盘 ID
   // - block_id: 块 ID
   void Delete(int tag, int disk_id, int block_id) {
-    // throw std::runtime_error("同时删除 disk_id, disk_id + disk_cnt");
+    throw std::runtime_error("不用再删除disk_id + disk_cnt");
 
     seg_mgr_->Delete(tag, disk_id, block_id); // 删除段信息
     disks_[disk_id].Delete(block_id);         // 删除磁盘块数据
@@ -227,20 +232,20 @@ public:
   // 参数：
   // - disk_id: 磁盘 ID
   void ReadSingle(int disk_id, int time) {
-    auto &disk = disks_[disk_id];
+    auto &disk = mirror_disks_[disk_id];
     while (time > 0) {
       const auto x =
-          scheduler_->GetRT(disk_id, disk.itr_); // 获取调度器推荐的读取位置
+          scheduler_->GetRT(disk_id, disk.GetItr()); // 获取调度器推荐的读取位置
       if (x == -1) {
         break; // 如果没有推荐位置，退出
       }
-      if (disk.itr_ == x) {
+      if (disk.GetItr() == x) {
         break;
       }
       int rd_cost = disk.ReadCost();
       if (ReadDist(disk_id, x) <= 12) {
         if (time >= rd_cost) {
-          auto [oid, y] = disk.GetStorageAt(disk.itr_);
+          auto [oid, y] = disk.GetStorageAt(disk.GetItr());
           disk.Read(time);                  // 执行读取操作
           printer::ReadAddRead(disk_id, 1); // 打印读取信息
           if (oid >= 0) {
@@ -258,13 +263,14 @@ public:
       }
     }
   }
+
   void Read(int disk_id) {
     int time = life_; // 初始化读取时间
 
     #ifdef SINGLE_READ_MODE
     ReadSingle(disk_id, time);
     #else
-    auto &disk = disks_[disk_id];
+    auto &disk = mirror_disks_[disk_id];
 
     // 读取最近的 k 个任务，按距离升序存储
     auto task_k =
@@ -440,7 +446,7 @@ public:
   // - dest: 目标位置
   // 返回值：距离
   auto ReadDist(int disk_id, int dest) -> int {
-    auto &disk = disks_[disk_id];
+    auto &disk = mirror_disks_[disk_id];
     int siz = disk.capacity_;
     int pos = disk.itr_;
     return (dest - pos + siz) % siz; // 计算环形磁盘上的距离
@@ -504,6 +510,7 @@ private:
   Scheduler *scheduler_;               // 调度器
   SegmentManager *seg_mgr_;            // 段管理器
   std::vector<Disk> disks_;            // 磁盘列表
+  std::vector<MirrorDisk> mirror_disks_;     // 虚拟磁盘
   std::vector<std::vector<db>> alpha_; // 相似矩阵
   std::vector<int> tag_sf_;            // 标签排序
 };
