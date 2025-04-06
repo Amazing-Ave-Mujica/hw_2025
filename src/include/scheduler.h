@@ -330,7 +330,7 @@ public:
         for (const auto& [disk_id, block_id] : req->work_) {
           q_[disk_id].RemoveOnce(block_id);
         }
-        printer::ReadAddBusy(req->tid_); // 添加读取请求
+        printer::ReadAddBusy(req->tid_);
       }
       req_list_.pop_front();
     }
