@@ -101,7 +101,7 @@ public:
 
     auto write_by_block = [&](int od, int kth) {
       auto &disk = disks_[od];
-      auto &mirrored_disk = disks_[od + disk_cnt_ / 2];
+      auto &mirrored_disk = disks_[od + (disk_cnt_ / 2)];
       object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
       for (int j = 0; j < object->size_; j++) {
         int block_id = -1;
@@ -146,7 +146,7 @@ public:
 
     auto write_by_block_forced = [&](int od, int kth) {
       auto &disk = disks_[od];
-      auto &mirrored_disk = disks_[od + disk_cnt_ / 2];
+      auto &mirrored_disk = disks_[od + (disk_cnt_ / 2)];
       object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
       for (int j = 0; j < object->size_; j++) {
         {
@@ -181,7 +181,7 @@ public:
 
     auto write_by_segment = [&](int od, int kth) {
       auto &disk = disks_[od];
-      auto &mirroed_disk = disks_[od + disk_cnt_ / 2];
+      auto &mirroed_disk = disks_[od + (disk_cnt_ / 2)];
       auto ptr =
           seg_mgr_->Find(object->tag_, od, object->size_); // 查找合适的段
       object->idisk_[kth] = od; // 设置副本所在磁盘

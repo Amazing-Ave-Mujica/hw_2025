@@ -210,7 +210,9 @@ namespace printer {
 void AddDeleteObject(TaskManager &t) {
   for (const auto &l : t.l_) {
     for (const auto &p : l) {
-      AddDeletedRequest(p->tid_); // 添加删除请求
+      if (p.use_count() > 1) {
+        AddDeletedRequest(p->tid_); // 添加删除请求
+      }
     }
   }
 }
@@ -296,7 +298,7 @@ public:
         q_[disk_id + config::REAL_DISK_CNT].Remove(y); // 从镜像磁盘的读取队列中移除块
       }
     }
-    printer::AddDeleteObject(task_mgr_[oid]); // 打印删除的对象
+    printer::AddDeleteObject(task_mgr_[oid]); // 打印删除的任务
     task_mgr_[oid].Clear();                   // 清空任务管理器
   }
 
