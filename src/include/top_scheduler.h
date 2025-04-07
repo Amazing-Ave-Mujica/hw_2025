@@ -23,9 +23,9 @@ public:
   // - obj_pool: 对象池，用于管理对象
   // - disk_mgr: 磁盘管理器，用于管理磁盘操作
   TopScheduler( Scheduler *scheduler, ObjectPool *obj_pool,
-               DiskManager *disk_mgr)
+               DiskManager *disk_mgr,int V)
       : scheduler_(scheduler), obj_pool_(obj_pool),
-        disk_mgr_(disk_mgr){};
+        disk_mgr_(disk_mgr),v_(V){};
 
   // 处理读取请求
   // 参数：
@@ -44,9 +44,12 @@ public:
         v.emplace_back(object->idisk_[i] + config::REAL_DISK_CNT, object->tdisk_[i][0]);
       }
     } else if constexpr (config::WritePolicy() == config::compact) {
-      v.reserve(2);
-      v.emplace_back(object->idisk_[0], object->tdisk_[0][0]);
-      v.emplace_back(object->idisk_[0] + config::REAL_DISK_CNT, object->tdisk_[0][0]);
+      v.reserve(1);
+      if(object->tdisk_[0][0]<v_/6){
+        v.emplace_back(object->idisk_[0], object->tdisk_[0][0]);
+      }else{
+        v.emplace_back(object->idisk_[0] + config::REAL_DISK_CNT, object->tdisk_[0][0]);
+      }
     }
     // 根据磁盘压力排序，选择压力最小的磁盘
     std::sort(v.begin(), v.end(), [&](auto x, auto y) {
@@ -125,4 +128,5 @@ private:
   Scheduler *scheduler_;  // 调度器，用于管理任务
   ObjectPool *obj_pool_;  // 对象池，用于管理对象
   DiskManager *disk_mgr_; // 磁盘管理器，用于管理磁盘操作
+  int v_;
 };
