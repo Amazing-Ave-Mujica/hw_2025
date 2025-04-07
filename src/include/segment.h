@@ -1,8 +1,10 @@
 #include "config.h"
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <iostream>
 #include <list>
+#include <random>
 #include <vector>
 
 class Segment {
@@ -91,15 +93,21 @@ public:
   // - size: 需要的块数
   // 返回值：指向满足条件的段的指针，如果没有找到则返回 nullptr
   auto Find(int tag, int disk_id, int size) -> Segment * {
+    static std::mt19937 rng(config::RANDOM_SEED);
+    std::array<Segment*,3>vec;
+    int tot=0;
     for (auto &s : segs_[tag]) {   // 遍历指定标签的段列表
       if (s.disk_id_ != disk_id) { // 如果段不在指定磁盘上，跳过
         continue;
       }
       if (s.size_ + size <= s.capacity_) { // 如果段有足够的剩余容量
-        return &s;                         // 返回段的指针
+        vec[tot++]=&s;                       // 返回段的指针
       }
     }
-    return nullptr; // 没有找到满足条件的段
+    if(tot==0){
+      return nullptr; // 没有找到满足条件的段
+    }
+    return vec[rng()%tot];
   }
 
   // 查找包含指定块的段
@@ -114,11 +122,10 @@ public:
         continue;
       }
       if (s.disk_addr_ <= block_id && block_id < s.disk_addr_ + s.capacity_) {
-        // 如果块在段的范围内
-        return &s; // 返回段的指针
+        return &s;
       }
     }
-    return nullptr; // 没有找到包含指定块的段
+    return nullptr;
   }
 
   auto FreeBlockSize(int idx) {
