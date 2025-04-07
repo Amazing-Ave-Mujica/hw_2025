@@ -19,8 +19,8 @@ struct GarbageAllocator{
     std::vector<std::tuple<db,int,int,int,int>> swaps_;
     const int m_;
     const int K_;//NOLINT
-    GarbageAllocator(const std::vector<std::vector<db>>&alpha,int m,int K):sim_(m,std::vector<db>(m+1)),m_(m),K_(K){
-        for(int i=0;i<m;i++){
+    GarbageAllocator(const std::vector<std::vector<db>>&alpha,int K):sim_(alpha.size()),m_(alpha.size()),K_(K){
+        for(int i=0;i<m_;i++){
             sim_[i]=alpha[i];
             sim_[i].push_back(0);
         }
@@ -57,7 +57,6 @@ struct GarbageAllocator{
         #ifdef ISCERR
         std::cerr<<"init similarity:"<<max_similarity<<'\n';
         #endif
-        
         std::vector<std::pair<int,int>>ret;
         int i=K_;
         while(i>0) {

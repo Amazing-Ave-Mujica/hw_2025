@@ -2,10 +2,12 @@
 
 #include "config.h"
 #include "disk.h"
+#include "disk_manager.h"
 #include "object.h"
 #include "printer.h"
 #include "scheduler.h"
 #include "segment.h"
+#include "garbage_collection.h"
 #include <algorithm>
 #include <cassert>
 #include <functional>
@@ -32,9 +34,9 @@ public:
   // - G: 磁盘的生命周期
   DiskManager(ObjectPool *obj_pool, Scheduler *scheduler,
               SegmentManager *seg_mgr, std::vector<std::vector<db>> alpha,
-              int N, int M, int V, int G)
+              int N, int M, int V, int G,int K)
       : disk_cnt_(N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler),
-        alpha_(std::move(alpha)), seg_mgr_(seg_mgr), tag_sf_(M) {
+        alpha_(std::move(alpha)), seg_mgr_(seg_mgr), tag_sf_(M),ga_(alpha,K) {
     std::iota(tag_sf_.begin(), tag_sf_.end(), 0);
     disks_.reserve(disk_cnt_); // 预留磁盘数量的空间
     mirror_disks_.reserve(disk_cnt_ + disk_cnt_);
@@ -105,7 +107,6 @@ public:
 
     auto write_by_block = [&](int od, int kth) {
       auto &disk = disks_[od];
-      auto &mirrored_disk = disks_[od + (disk_cnt_ / 2)];
       object->idisk_[kth] = disk.disk_id_; // 设置副本所在磁盘
       for (int j = 0; j < object->size_; j++) {
         int block_id = -1;
@@ -457,7 +458,7 @@ public:
 
   auto GarbageCollection(int k) -> void {
 
-    return;
+    // return;
     
     if constexpr (config::WritePolicy() == config::WRITEPOLICIES::compact) {
       static bool f = false;
@@ -480,7 +481,7 @@ public:
         f = true;
         return;
       }();
-      std::queue<std::pair<int, int>> frags;
+      std::vector<std::tuple<int,int,int>> frags[disk_cnt_];
       for (int i = 0; i < disk_cnt_; i++) {
         auto &disk = disks_[i];
         for (int j = 0; j < seg_mgr_->seg_disk_capacity_[i]; j++) {
@@ -488,8 +489,14 @@ public:
           int seg_tag = (std::lower_bound(idx[i].begin(), idx[i].end(), j) -
                          idx[i].begin());
           if ((obj_pool_->GetObjAt(oid)->tag_) != seg_tag) {
-            frags.emplace(i, j);
+            frags[i].emplace_back(j,seg_tag,obj_pool_->GetObjAt(oid)->tag_);
           }
+        }
+      }
+      for(int disk_id=0;disk_id<disk_cnt_;disk_id++){
+        auto swaps=ga_.garbage_collection(frags[disk_id]);
+        for(auto [x,y]:swaps){
+          printer::GCAdd(disk_id,x,y);
         }
       }
     }
@@ -505,4 +512,5 @@ private:
   std::vector<MirrorDisk> mirror_disks_;     // 虚拟磁盘
   std::vector<std::vector<db>> alpha_; // 相似矩阵
   std::vector<int> tag_sf_;            // 标签排序
+  GarbageAllocator ga_;//垃圾清理
 };
