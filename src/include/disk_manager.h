@@ -69,6 +69,7 @@ public:
     sort(tag_sf_.begin(), tag_sf_.end(), [&](int a, int b) {
       return alpha_[object->tag_][a] > alpha_[object->tag_][b];
     });
+    int tag;
 
     auto write_to_disk = [&](int od, const std::function<bool(int, int)> &check,
                              const std::function<bool(int, int)> &write) {
@@ -162,7 +163,7 @@ public:
     auto check_by_segment = [&](int od, int kth) {
       auto &disk = disks_[od];
       auto ptr =
-          seg_mgr_->Find(object->tag_, od, object->size_); // 查找合适的段
+          seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
       if (ptr == nullptr) {
         return false; // 如果没有找到合适的段，返回 false
       }
@@ -176,7 +177,7 @@ public:
     auto write_by_segment = [&](int od, int kth) {
       auto &disk = disks_[od];
       auto ptr =
-          seg_mgr_->Find(object->tag_, od, object->size_); // 查找合适的段
+          seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
       object->idisk_[kth] = od; // 设置副本所在磁盘
       for (int j = 0; j < object->size_; j++) {
         auto& block_id = object->tdisk_[kth][j];
@@ -186,18 +187,26 @@ public:
       return true;                         // 写入成功
     };
 
-    for (auto od : sf) {
-      if (kth == 0 && write_to_disk(od, check_by_segment, write_by_segment)) {
-        return true;
+    if(kth==0){
+      for(int i : tag_sf_){
+        tag=i;
+        for (auto od : sf) {
+          if (kth == 0 && write_to_disk(od, check_by_segment, write_by_segment)) {
+            return true;
+          }
+        }
       }
+    }
+    for (auto od : sf) {
       if (write_to_disk(od, check_by_block, write_by_block)) {
         return true;
       }
+    }
+    for (auto od : sf) {
       if (write_to_disk(od, check_by_block_forced, write_by_block_forced)) {
         return true;
       }
     }
-
     return false; // 写入失败
   }
 

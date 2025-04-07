@@ -1,6 +1,7 @@
 #include "config.h"
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 #include <list>
 #include <vector>
 
@@ -63,9 +64,17 @@ public:
     for (int i = 0; i < N; i++) {   // 遍历每个磁盘
       int addr = 0;                 // 当前磁盘的起始地址
       int rem = V;                  // 当前磁盘的剩余容量
-      for (int _ = 0; _ < 2*M; _++) { // 遍历每个标签
-        int j = tsp[i][_%M];
-        auto cur = std::min(t[j][i]/2, rem); // 当前标签在该磁盘上的分配
+      for (int _ = 0; _ < M; _++) { // 遍历每个标签
+        int j = tsp[i][_];
+        auto cur = std::min(t[j][i], rem); // 当前标签在该磁盘上的分配
+        segs_[j].emplace_back(i, addr, j,
+                              cur); // 创建段并添加到对应标签的段列表
+        rem -= cur;                 // 更新剩余容量
+        addr += cur;                // 更新起始地址
+      }
+      for (int _ = 0; _ < M; _++) { // 遍历每个标签
+        int j = tsp[i+N][_];
+        auto cur = std::min(t[j][i+N], rem); // 当前标签在该磁盘上的分配
         segs_[j].emplace_back(i, addr, j,
                               cur); // 创建段并添加到对应标签的段列表
         rem -= cur;                 // 更新剩余容量

@@ -30,8 +30,16 @@ def read_data(filename):
                 cur-=data[i][j]
                 cur+=data[i+M][j]
                 max_sum[i]=max(max_sum[i],cur)
+            
+        cur=0
+        cur_max=0
+        for i in range(cols_per_row):
+            for j in range(M):
+                cur-=data[j][i]
+                cur+=data[j+M][i]
+            cur_max=max(cur_max,cur)
     
-    return T, M, N, V, G, data, cols_per_row,sum(max_sum)
+    return T, M, N, V, G, data, cols_per_row,sum(max_sum),cur_max
 
 def plot_line_chart(x, y, title, xlabel, ylabel, filename, labels=None, colors=None):
     """
@@ -81,17 +89,17 @@ def plot_change_of_label_graphs(data, cols_per_row, save_dir, M):
         colors = ['orange', 'blue', 'green']
         plot_line_chart(x, y, title, 'Time', 'object count', filename, labels, colors)
 
-def plot_bar_chart(nv_value, max_sum, save_dir):
+def plot_bar_chart(nv_value, max_sum,max_cur, save_dir):
     """
     绘制柱状图，显示 N*V 和 max_sum 的对比。
     """
     # 设置柱状图的标签和对应的值
-    labels = ['total capacity(N*V)', 'Max Need']
-    values = [nv_value, 3*max_sum]
+    labels = ['total capacity(N*V)', 'Max Need','Max Cur']
+    values = [nv_value, 3*max_sum,3*max_cur]
 
     # 绘制柱状图
     plt.figure(figsize=(8, 6))
-    plt.bar(labels, values, color=['blue', 'orange'])
+    plt.bar(labels, values, color=['blue', 'orange','red'])
     plt.ylabel('Value')
     plt.title('Comparison')
     plt.grid(axis='y', linestyle='--', alpha=0.7)
@@ -102,7 +110,7 @@ def plot_bar_chart(nv_value, max_sum, save_dir):
     plt.close()
     print(f"Bar chart saved as {bar_chart_filename}")
 
-def plot_graphs(T, M, N, V, G, data, cols_per_row,max_sum,save_dir):
+def plot_graphs(T, M, N, V, G, data, cols_per_row,max_sum,max_cur,save_dir):
     """
     主绘图函数，调用其他绘图功能。
     """
@@ -111,7 +119,7 @@ def plot_graphs(T, M, N, V, G, data, cols_per_row,max_sum,save_dir):
 
     # 绘制 change_of_label 图表
     plot_change_of_label_graphs(data, cols_per_row, save_dir, M)
-    plot_bar_chart(N*V, max_sum, save_dir)
+    plot_bar_chart(N*V, max_sum,max_cur, save_dir)
 
 def main():
     """
@@ -129,8 +137,8 @@ def main():
     os.makedirs(args.save_dir, exist_ok=True)
 
     # 读取数据并绘制图表
-    T, M, N, V, G, data, cols_per_row,max_sum = read_data(args.data_path)
-    plot_graphs(T, M, N, V, G, data, cols_per_row,max_sum, args.save_dir)
+    T, M, N, V, G, data, cols_per_row,max_sum,max_cur = read_data(args.data_path)
+    plot_graphs(T, M, N, V, G, data, cols_per_row,max_sum, max_cur,args.save_dir)
     print(f"Graphs saved successfully in {args.save_dir}!")
 
 if __name__ == "__main__":

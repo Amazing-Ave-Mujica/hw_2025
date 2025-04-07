@@ -22,15 +22,11 @@ int timeslice = 0;
 
 auto main() -> int {
 
-// #ifdef LLDB
-//   freopen(R"(/home/fiatiustitia/HW-2025/data/sample_practice.in)", "r", stdin);
-//   freopen(R"(/home/fiatiustitia/HW-2025/log/code_craft.log)", "w", stdout);
-// #endif
 
-#ifdef LLDB
-  freopen(R"(D:\Documents\hw_2025\data\sample_practice.in)", "r", stdin);
-  freopen(R"(D:\Documents\hw_2025\log.txt)", "w", stdout);
-#endif
+  // freopen(R"(F:/plk2025/HW-2025/data/sample_practice.in)", "r", stdin);
+  // freopen(R"(F:/plk2025/HW-2025/log/code_craft.log)", "w", stdout);
+
+
 
   std::ios::sync_with_stdio(false);
   std::cin.tie(nullptr);
@@ -144,15 +140,5 @@ auto main() -> int {
       gc_op(); // 垃圾回收
     }
 
-#ifdef ISCERR
-    // std::cerr << "TIMESTAMP " << timeslice << '\n';
-    if (timeslice == t + 105) {
-      for (int i = 0; i < n; i++) {
-        auto x = dm.GetDisk(i);
-        std::cerr << "Disk " << i << " read count: " << x.GetReadCount()
-                  << '\n';
-      }
-    }
-#endif
   }
 }
