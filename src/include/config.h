@@ -30,7 +30,7 @@ constexpr db K_CROSS_RATE = 0.5;   // 交叉概率
 constexpr db K_MUTATE_RATE = 0.05; // 变异概率
 constexpr int ELITE_NUM = 10;      // 精英个体数量
 
-constexpr int DISK_READ_FETCH_LEN = 63; // 规划最近的读取任务个数
+constexpr int DISK_READ_FETCH_LEN = 32; // 规划最近的读取任务个数
 constexpr int REQ_BUSY_TIME = 105;
 int RTQ_DISK_PART_SIZE; // RTQ 给磁盘分区大小 NOLINT
 int JUMP_THRESHOLD;     // 热门块比当前块大多少时直接跳转 NOLINT

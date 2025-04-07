@@ -30,9 +30,6 @@ auto TSP(int n, const std::vector<std::vector<db>> &dist) -> std::vector<int> {
         } // j 已访问 或 i==j 跳过
         int new_s = (s | (1 << j)); // 新状态，加入 j
         db res = dp[s][i] + dist[i][j];
-        if (new_s == full_mask) {
-          // res += dist[j][0];
-        } // 最后一步，回到起点
         if (dp[new_s][j] < res) {
           dp[new_s][j] = res;
           parent[new_s][j] = i; // 记录 j 的前驱是 i
@@ -42,11 +39,11 @@ auto TSP(int n, const std::vector<std::vector<db>> &dist) -> std::vector<int> {
   }
 
   // 找到最优解，并回溯路径
-  db max_fitness = 0;
+  db max_fitness = -config::INF;
   int last_city = -1;
   for (int j = 1; j < n; j++) {
-    if (dp[full_mask][j] + dist[j][0] > max_fitness) {
-      max_fitness = dp[full_mask][j] + dist[j][0];
+    if (dp[full_mask][j] > max_fitness) {
+      max_fitness = dp[full_mask][j] ;
       last_city = j;
     }
   }
