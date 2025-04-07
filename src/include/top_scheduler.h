@@ -45,18 +45,19 @@ public:
       }
     } else if constexpr (config::WritePolicy() == config::compact) {
       v.reserve(1);
+      int idx1=object->idisk_[0],idx2=idx1+config::REAL_DISK_CNT;//NOLINT
       if(object->tdisk_[0][0]<v_/6){
-        v.emplace_back(object->idisk_[0], object->tdisk_[0][0]);
+        disk=idx1;
       }else{
-        v.emplace_back(object->idisk_[0] + config::REAL_DISK_CNT, object->tdisk_[0][0]);
+        disk=idx2;
       }
     }
     // 根据磁盘压力排序，选择压力最小的磁盘
-    std::sort(v.begin(), v.end(), [&](auto x, auto y) {
-      return disk_mgr_->GetStress(x.first, x.second) <
-             disk_mgr_->GetStress(y.first, y.second);
-    });
-    disk = v[0].first; // 选择压力最小的副本
+    // std::sort(v.begin(), v.end(), [&](auto x, auto y) {
+    //   return disk_mgr_->GetStress(x.first, x.second) <
+    //          disk_mgr_->GetStress(y.first, y.second);
+    // });
+    // disk = v[0].first; // 选择压力最小的副本
 
     int x;
     for (int i = 0; i < 3; i++) {

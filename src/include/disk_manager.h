@@ -455,6 +455,10 @@ public:
   }
 
   auto GetDisk(int disk_id) -> Disk & { return disks_[disk_id]; } // 获取磁盘
+  auto GetReadCount(int disk_id) -> int {
+    return mirror_disks_[disk_id].read_count_; // 获取读取次数
+  }
+
 
   auto GarbageCollection(int k) -> void {
 

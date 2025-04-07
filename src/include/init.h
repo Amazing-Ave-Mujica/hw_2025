@@ -156,9 +156,16 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
 
   // 初始化资源分配器并求解
   if constexpr (config::WritePolicy() == config::compact) {
-    ResourceAllocator ra(m, 2*n, v / 6, 2*g/3, resource, alpha);
+    ResourceAllocator ra(m, n, v / 3, 4*g/3, resource, alpha);
     ra.Solve();
-    return {ra.GetBestSolution(), alpha};
+    auto sol=ra.GetBestSolution();
+    for(auto&x:sol){
+      for(int i=0;i<n;i++){
+        x[i]/=2;
+        x.push_back(x[i]);
+      }
+    }
+    return {sol, alpha};
   }
   ResourceAllocator ra(m, n, v, g, resource, alpha);
   ra.Solve();

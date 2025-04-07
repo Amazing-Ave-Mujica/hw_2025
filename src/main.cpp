@@ -139,6 +139,12 @@ auto main() -> int {
     if (timeslice % 1800 == 0){
       gc_op(); // 垃圾回收
     }
-
+  #ifdef ISCERR
+    if (timeslice ==t+104) {
+      for(int i=0;i<2*n;i++){
+        std::cerr<<dm.GetReadCount(i)<<'\n';
+      }
+    }
+  #endif
   }
 }

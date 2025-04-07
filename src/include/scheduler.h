@@ -38,12 +38,13 @@ private:
     assert(it != sum_.begin());
     it = prev(it);
     it->second += v;
+    read_stress_ += v;
   }
 
 public:
   // 构造函数
   explicit RTQ(int V) {
-    for (int i = 0; i < V; i += config::RTQ_DISK_PART_SIZE) {
+    for (int i = 0; i < V; i += V) {
       sum_.emplace_back(i, 0);
     }
     sum_.emplace_back(V, 0);
@@ -137,10 +138,14 @@ public:
     return it->second;
   }
 
+  auto QueryReadStress() -> int {
+    return read_stress_; // 返回读取压力
+  }
 private:
   std::set<int> st_; // 使用有序集合维护块 ID，支持快速查找和删除
   std::vector<std::pair<int, int>> sum_; // 前缀和
   std::unordered_map<int, int> cnt_;     // 出现次数
+  int read_stress_{0};                  // 读取压力
 };
 
 // 每个对象一个 TaskManager，用于管理对象的任务
@@ -285,7 +290,9 @@ public:
   // - disk_id: 磁盘 ID
   // 返回值：读取队列的大小
   auto GetRTQSize(int disk_id) -> int { return q_[disk_id].GetSize(); }
-
+  auto GetReadStress(int disk_id) -> int {
+    return q_[disk_id].QueryReadStress(); // 获取读取压力
+  }
   // 删除对象的所有任务
   // 参数：
   // - oid: 对象 ID
