@@ -483,24 +483,25 @@ public:
           std::sort(v.begin(), v.end());
         }
         f = true;
-        return;
       }();
-      std::vector<std::tuple<int,int,int>> frags[disk_cnt_];
-      for (int i = 0; i < disk_cnt_; i++) {
-        auto &disk = disks_[i];
-        for (int j = 0; j < seg_mgr_->seg_disk_capacity_[i]; j++) {
-          int oid = disk.GetStorageAt(j).first;
-          int seg_tag = (std::lower_bound(idx[i].begin(), idx[i].end(), j) -
-                         idx[i].begin());
-          if ((obj_pool_->GetObjAt(oid)->tag_) != seg_tag) {
-            frags[i].emplace_back(j,seg_tag,obj_pool_->GetObjAt(oid)->tag_);
+      std::vector<int>lef(disk_cnt_, k);
+      for(auto&seg_list:seg_mgr_->segs_){
+        for(auto&seg:seg_list){
+          auto&disk=disks_[seg.disk_id_];
+          for(int i=seg.disk_addr_,j=seg.disk_addr_+seg.size_-1;i<j;i++){
+            if(disk.storage_[i].first!=-1){
+              continue;
+            }
+            while(i<j&&disk.storage_[j].first==-1){
+              j--;
+            }
+            if(i>=j){
+              break;
+            }
+            if(lef[seg.disk_id_]-->0){
+              printer::GCAdd(seg.disk_id_, i, j);
+            }
           }
-        }
-      }
-      for(int disk_id=0;disk_id<disk_cnt_;disk_id++){
-        auto swaps=ga_.garbage_collection(frags[disk_id]);
-        for(auto [x,y]:swaps){
-          printer::GCAdd(disk_id,x,y);
         }
       }
     }

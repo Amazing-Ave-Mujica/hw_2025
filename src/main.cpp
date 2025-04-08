@@ -122,7 +122,7 @@ auto main() -> int {
   auto gc_op = [&]() {
     std::string tmp;
     std::cin >> tmp >> tmp;
-    // dm.GarbageCollection(k); // 垃圾回收
+    dm.GarbageCollection(k); // 垃圾回收
     printer::GCPrint(n);
   };
 
