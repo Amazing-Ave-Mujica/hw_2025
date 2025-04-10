@@ -141,6 +141,11 @@ public:
   auto QueryReadStress() -> int {
     return read_stress_; // 返回读取压力
   }
+  auto Swap(int x,int y,int tp)->void{
+    if(tp==1) {return;}
+    st_.insert(y);
+    st_.erase(x);
+  }
 private:
   std::set<int> st_; // 使用有序集合维护块 ID，支持快速查找和删除
   std::vector<std::pair<int, int>> sum_; // 前缀和
@@ -327,7 +332,11 @@ public:
   }
 
   // [?] 获取磁盘读任务的分布，用于读调度器使用
-
+  void Swap(int disk_id, int x, int y, int tp) {
+    obj_pool_->Swap(disk_id, x, y,tp); // 交换对象的块 ID
+    q_[disk_id].Swap(x, y, tp); // 交换读取队列中的块
+    q_[disk_id + config::REAL_DISK_CNT].Swap(x, y, tp); // 镜像磁盘也交换
+  }
   void PopOldReqs() {
     int lim = timeslice - config::REQ_BUSY_TIME;
     while (!req_list_.empty() && req_list_.front()->timestamp_ <= lim) {

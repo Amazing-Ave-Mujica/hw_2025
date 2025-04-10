@@ -459,7 +459,13 @@ public:
     return mirror_disks_[disk_id].read_count_; // 获取读取次数
   }
 
-
+  auto Swap(int disk_id, int x, int y,int tp) -> void {//两个都有(1)或者一有一无(0)
+    printer::GCAdd(disk_id, x, y);
+    auto &disk = disks_[disk_id];
+    disk.Swap(x, y,tp);                            // 磁盘交换数据
+    seg_mgr_->Swap(disk_id,x,y,tp); // 更新段信息
+    scheduler_->Swap(disk_id,x,y,tp);
+  }
   auto GarbageCollection(int k) -> void {
 
     // return;
@@ -499,7 +505,7 @@ public:
               break;
             }
             if(lef[seg.disk_id_]-->0){
-              printer::GCAdd(seg.disk_id_, i, j);
+              Swap(seg.disk_addr_,i,j,0);//两个都有(1)或者一有一无(0)
             }
           }
         }

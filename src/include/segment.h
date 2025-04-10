@@ -156,4 +156,20 @@ public:
     }
     return false; // 没有找到包含指定块的段
   }
+  auto Swap(int disk_id,int x,int y,int tp)->void{
+    if(tp==1) {return;} //两个都有(1)或者一有一无(0)
+    for(auto &lst:segs_){
+      for (auto &s : lst) {   // 遍历所有标签的段列表
+        if (s.disk_id_ != disk_id) { // 如果段不在指定磁盘上，跳过
+          continue;
+        }
+        if (s.disk_addr_ <= x && x < s.disk_addr_ + s.capacity_) {
+          s.Delete(1); // 从段中删除一个块
+        }
+        if (s.disk_addr_ <= y && y < s.disk_addr_ + s.capacity_) {
+          s.Write(1); // 从段中删除一个块
+        }
+      }
+    }
+  }
 };

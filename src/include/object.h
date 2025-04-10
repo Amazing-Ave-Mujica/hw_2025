@@ -74,7 +74,22 @@ public:
     objs_[oid]->valid_ = false;
     //objs_[oid].reset();
   }
-
+  auto Swap(int disk_id,int x,int y,int tp)->void{    
+    for(auto &it:objs_){
+      for(int i=0;i<3;i++){
+        if(it->idisk_[i]==disk_id){
+          for(auto &p:it->tdisk_[i]){
+            if(p==x){
+              p=y;
+            }
+            else if(p==y){
+              p=x;
+            }
+          }
+        }
+      }
+    }
+  }
 private:
   int size_{}; // 当前对象池中的对象数量
   std::vector<std::shared_ptr<Object>> objs_; // 存储对象的共享指针列表
