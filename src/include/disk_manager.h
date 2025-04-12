@@ -3,7 +3,6 @@
 #include "config.h"
 #include "disk.h"
 #include "disk_manager.h"
-#include "garbage_collection.h"
 #include "object.h"
 #include "printer.h"
 #include "scheduler.h"
@@ -36,7 +35,7 @@ public:
               SegmentManager *seg_mgr, std::vector<std::vector<db>> alpha,
               int N, int M, int V, int G, int K)
       : disk_cnt_(N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler),
-        alpha_(std::move(alpha)), seg_mgr_(seg_mgr), tag_sf_(M), ga_(alpha, K) {
+        alpha_(std::move(alpha)), seg_mgr_(seg_mgr), tag_sf_(M) {
     std::iota(tag_sf_.begin(), tag_sf_.end(), 0);
     disks_.reserve(disk_cnt_); // 预留磁盘数量的空间
     mirror_disks_.reserve(disk_cnt_ + disk_cnt_);
@@ -535,5 +534,4 @@ private:
   std::vector<MirrorDisk> mirror_disks_; // 虚拟磁盘
   std::vector<std::vector<db>> alpha_;   // 相似矩阵
   std::vector<int> tag_sf_;              // 标签排序
-  GarbageAllocator ga_;                  // 垃圾清理
 };

@@ -59,7 +59,7 @@ auto main() -> int {
       std::cin >> read_data[i][j]; // 读取数据
     }
   }
-  std::vector<int> extra_tokens((t + 104) / TIME_SLICE_DIVISOR + 1);
+  std::vector<int> extra_tokens((t + 104) / TIME_SLICE_DIVISOR + 1);//NOLINT
   for(auto &it : extra_tokens){
     std::cin >> it;
   }
