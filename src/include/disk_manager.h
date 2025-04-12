@@ -256,8 +256,9 @@ public:
     }
   }
 
-  void Read(int disk_id) {
-    int time = life_; // 初始化读取时间
+  void Read(int disk_id, int ext_g) {
+    const int real_life = life_ + ext_g;
+    int time = life_ + ext_g; // 初始化读取时间
 
 #ifdef SINGLE_READ_MODE
     ReadSingle(disk_id, time);
@@ -273,7 +274,7 @@ public:
     }
     // 如果最近的任务都太远，就直接 jump
     int target = scheduler_->GetRT(disk_id, disk.GetItr());
-    if (ReadDist(disk_id, task_k[0]) >= life_) {
+    if (ReadDist(disk_id, task_k[0]) >= real_life) {
 
       disk.Jump(time, target);               // 跳转到目标位置
       printer::ReadSetJump(disk_id, target); // 打印跳转信息
@@ -293,10 +294,10 @@ public:
     int task_cnt = task_k.size();
     // val.size() = 9
     static const std::vector<int> val = {16, 19, 23, 28,       34,
-                                         42, 52, 64, life_ + 1};
+                                         42, 52, 64, real_life + 1};
     // +1 是因为会有一个伪装任务
     std::vector<std::vector<int>> dp(task_cnt + 1,
-                                     std::vector<int>(val.size(), life_ + 1));
+                                     std::vector<int>(val.size(), real_life + 1));
     std::vector<std::vector<std::pair<int, int>>> fr(
         task_cnt + 1, std::vector<std::pair<int, int>>(val.size(), {-1, -1}));
 
@@ -353,7 +354,7 @@ public:
       // 跳过空白块并且读了当前块
       int res = dp[i - 1][pre_val_id] +
                 cross_empty_blank_cost(pre_val_id, len, op) + val[val_id];
-      if (dp[i][val_id] > res && res <= life_) {
+      if (dp[i][val_id] > res && res <= real_life) {
         dp[i][val_id] = res;
         fr[i][val_id] = {pre_val_id, op};
       }
@@ -361,7 +362,7 @@ public:
 
     for (int i = 1; i <= task_cnt; i++) {
       for (int j = 0; j < val.size(); j++) {
-        if (dp[i - 1][j] <= life_) {
+        if (dp[i - 1][j] <= real_life) {
           int len = two_block_dist(task_k[i - 1], task_k[i]) - 1;
           if (len > 0) {
             // read 空白块
@@ -380,7 +381,7 @@ public:
     std::pair<int, int> state = {0, 0};
     for (int i = task_cnt; i >= 1 && state.first == 0; i--) {
       for (int j = 0; j < val.size(); j++) {
-        if (dp[i][j] <= life_) {
+        if (dp[i][j] <= real_life) {
           state = {i, j};
           break;
         }
