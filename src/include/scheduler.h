@@ -266,7 +266,7 @@ public:
   // - size: 对象的块数
   void NewTaskMgr(int oid, int size) {
     assert(oid == task_mgr_.size()); // 确保对象 ID 与任务管理器的大小一致
-    task_mgr_.emplace_back(size);    // 创建新的任务管理器
+    task_mgr_.emplace_back(size); // 创建新的任务管理器
   }
 
   // 添加新任务
@@ -364,7 +364,7 @@ public:
     // 更新超时删除队列
     task_mgr_[oid].Trans(x, y);
 
-    q_[disk_id].Trans(x, y);                         // 交换读取队列中的块
+    q_[disk_id].Trans(x, y); // 交换读取队列中的块
     q_[disk_id + config::REAL_DISK_CNT].Trans(x, y); // 镜像磁盘也交换
   }
 
@@ -391,8 +391,8 @@ private:
       删除其中某个属性 = xxx 的所有元素
     （用于其他磁盘读取了同样的块需要删，或者删除了某个 object）
   */
-  ObjectPool *obj_pool_;                      // 对象池，用于管理对象
-  std::vector<RTQ> q_;                        // 每个磁盘的读取队列
-  std::vector<TaskManager> task_mgr_;         // 每个对象的任务管理器
+  ObjectPool *obj_pool_;              // 对象池，用于管理对象
+  std::vector<RTQ> q_;                // 每个磁盘的读取队列
+  std::vector<TaskManager> task_mgr_; // 每个对象的任务管理器
   std::list<std::shared_ptr<Task>> req_list_; // 支持删除 105 个时间片前的任务
 };

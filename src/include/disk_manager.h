@@ -177,7 +177,7 @@ public:
     auto write_by_segment = [&](int od, int kth) {
       auto &disk = disks_[od];
       auto ptr = seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
-      object->idisk_[kth] = od;                          // 设置副本所在磁盘
+      object->idisk_[kth] = od; // 设置副本所在磁盘
       for (int j = 0; j < object->size_; j++) {
         auto &block_id = object->tdisk_[kth][j];
         block_id = disk.WriteBlock(ptr->disk_addr_, oid, j); // 写入数据到段
@@ -467,7 +467,7 @@ public:
     auto &disk = disks_[disk_id];
 
     auto [oid, idx] = disk.GetStorageAt(x);
-    
+
     scheduler_->Trans(disk_id, x, y, oid, idx);
 
     disk.Trans(x, y); // 磁盘交换数据
@@ -481,25 +481,25 @@ public:
     // return;
 
     if constexpr (config::WritePolicy() == config::WRITEPOLICIES::compact) {
-      static bool f = false;
-      static std::vector<std::vector<int>> idx(disk_cnt_);
-      [&]() {
-        if (f) {
-          return;
-        }
-        for (int i = 0, len = tag_sf_.size(); i < len; i++) {
-          for (auto &s : seg_mgr_->segs_[i]) {
-            idx[s.disk_id_].push_back(s.disk_addr_);
-          }
-        }
-        for (int i = 0; i < disk_cnt_; i++) {
-          idx[i].emplace_back(seg_mgr_->seg_disk_capacity_[i]);
-        }
-        for (auto &v : idx) {
-          std::sort(v.begin(), v.end());
-        }
-        f = true;
-      }();
+      // static bool f = false;
+      // static std::vector<std::vector<int>> idx(disk_cnt_);
+      // [&]() {
+      //   if (f) {
+      //     return;
+      //   }
+      //   for (int i = 0, len = tag_sf_.size(); i < len; i++) {
+      //     for (auto &s : seg_mgr_->segs_[i]) {
+      //       idx[s.disk_id_].push_back(s.disk_addr_);
+      //     }
+      //   }
+      //   for (int i = 0; i < disk_cnt_; i++) {
+      //     idx[i].emplace_back(seg_mgr_->seg_disk_capacity_[i]);
+      //   }
+      //   for (auto &v : idx) {
+      //     std::sort(v.begin(), v.end());
+      //   }
+      //   f = true;
+      // }();
       std::vector<int> lef(disk_cnt_, k);
       for (auto &seg_list : seg_mgr_->segs_) {
         for (auto &seg : seg_list) {

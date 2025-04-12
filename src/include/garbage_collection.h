@@ -59,7 +59,7 @@ struct GarbageAllocator {
   }
 
   // 进行最多 K 次操作，使总相似度最大
-  //NOLINTNEXTLINE
+  // NOLINTNEXTLINE
   auto maximize_similarity(Matrix<int> &allo, Matrix<std::vector<int>> &pos)
       -> std::vector<std::pair<int, int>> { // NOLINT
     db max_similarity = compute_similarity(allo);
@@ -101,7 +101,7 @@ struct GarbageAllocator {
   tag==m表示该位置为空
   返回值：pair<int,int>
   */
-  //NOLINTNEXTLINE
+  // NOLINTNEXTLINE
   auto garbage_collection(const std::vector<std::tuple<int, int, int>> &info)
       -> std::vector<std::pair<int, int>> { // NOLINT
     Matrix<std::vector<int>> pos(m_, std::vector<std::vector<int>>(m_ + 1));
@@ -112,7 +112,7 @@ struct GarbageAllocator {
     }
     return maximize_similarity(allo, pos);
   }
-  //NOLINTNEXTLINE
+  // NOLINTNEXTLINE
   auto garbage_collection(Matrix<std::vector<int>> pos)
       -> std::vector<std::pair<int, int>> { // NOLINT
     Matrix<int> allo;

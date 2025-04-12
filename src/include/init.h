@@ -54,8 +54,8 @@ struct Spearman {
   }
 
   // 计算斯皮尔曼秩相关系数
-  auto spearmanCorrelation(const std::vector<db> &x, const std::vector<db> &y)
-      -> db { // NOLINT
+  auto SpearmanCorrelation(const std::vector<db> &x,
+                           const std::vector<db> &y) -> db { // NOLINT
     int n = x.size();
     if (n != y.size() || n == 0) {
       std::cerr << "Error: Input vectors must have the same non-zero size.\n";
@@ -152,7 +152,7 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
         read_data_i[t] = read_data[i][t];
         read_data_j[t] = read_data[j][t];
       }
-      alpha[i][j] = Spearman().spearmanCorrelation(read_data_i, read_data_j);
+      alpha[i][j] = Spearman().SpearmanCorrelation(read_data_i, read_data_j);
     }
   }
 

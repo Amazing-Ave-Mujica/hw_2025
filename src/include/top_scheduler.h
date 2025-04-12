@@ -25,7 +25,7 @@ public:
   TopScheduler(Scheduler *scheduler, ObjectPool *obj_pool,
                DiskManager *disk_mgr, int V)
       : scheduler_(scheduler), obj_pool_(obj_pool), disk_mgr_(disk_mgr),
-        v_(V) {};
+        v_(V){};
 
   // 处理读取请求
   // 参数：
@@ -33,7 +33,7 @@ public:
   // - oid: 读取任务关联的对象 ID
   void ReadRequest(int tid, int oid) {
     assert(oid >= 0);                       // 确保对象 ID 合法
-    assert(obj_pool_->IsValid(oid));        // 确保对象有效
+    assert(obj_pool_->IsValid(oid));        // 确ee保对象有效
     auto object = obj_pool_->GetObjAt(oid); // 获取对象
     int disk;                               // 选择读的磁盘
     std::vector<std::pair<int, int>> v;     // 候选磁盘列表
@@ -46,8 +46,8 @@ public:
       }
     } else if constexpr (config::WritePolicy() == config::compact) {
       v.reserve(1);
-      int idx1 = object->idisk_[0],
-          idx2 = idx1 + config::REAL_DISK_CNT; // NOLINT
+      int idx1 = object->idisk_[0];
+      int idx2 = idx1 + config::REAL_DISK_CNT; // NOLINT
       if (object->tdisk_[0][0] < v_ / 6) {
         disk = idx1;
       } else {
@@ -91,7 +91,7 @@ public:
   auto InsertRequest(int id, int size, int tag) -> int {
     int oid = obj_pool_->NewObject(id, tag, size); // 创建新对象
     assert(id == oid);                             // 确保对象 ID 一致
-    scheduler_->NewTaskMgr(oid, size);             // 创建新的任务管理器
+    scheduler_->NewTaskMgr(oid, size); // 创建新的任务管理器
     for (int i = 0; i < 3; i++) {
       auto scc = disk_mgr_->Insert(oid, i);
       assert(scc); // 将对象的副本插入磁盘

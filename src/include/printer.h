@@ -20,7 +20,7 @@ int buf[4]
                                        // 2^20 个请求
 int top[4] = {0};
 std::string ops[config::MAX_N][2]; // 每个磁盘的操作记录（最多支持 10 个磁盘）
-int gc_top[config::MAX_N] = {0};   // 垃圾回收操作的索引
+int gc_top[config::MAX_N] = {0}; // 垃圾回收操作的索引
 int gc_buf[config::MAX_N][config::PRINTER_BUF_CAPACITY][2];
 
 // 请求类型的枚举
@@ -160,8 +160,9 @@ auto PrintRead(int N) -> void {
 
 auto GCAdd(int disk_id, int id1, int id2) {
   // std::cerr<<disk_id<<' '<<id1<<' '<<id2<<'\n';
-  gc_buf[disk_id][gc_top[disk_id]++][0] = id1;
-  gc_buf[disk_id][gc_top[disk_id]++][1] = id2;
+  gc_buf[disk_id][gc_top[disk_id]][0] = id1;
+  gc_buf[disk_id][gc_top[disk_id]][1] = id2;
+  gc_top[disk_id]++;
 }
 
 auto GCPrint(int N) {
