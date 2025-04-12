@@ -332,7 +332,7 @@ public:
   }
 
   // [?] 获取磁盘读任务的分布，用于读调度器使用
-  void Swap(int disk_id, int x, int y, int tp) {
+  void Swap(int disk_id, int x, int y, int tp,std::pair<int,int>o1,std::pair<int,int>o2) {
     obj_pool_->Swap(disk_id, x, y,tp); // 交换对象的块 ID
     q_[disk_id].Swap(x, y, tp); // 交换读取队列中的块
     q_[disk_id + config::REAL_DISK_CNT].Swap(x, y, tp); // 镜像磁盘也交换

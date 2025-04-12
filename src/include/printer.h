@@ -156,6 +156,7 @@ auto PrintRead(int N) -> void {
 }
 
 auto GCAdd(int disk_id,int id1,int id2){
+  // std::cerr<<disk_id<<' '<<id1<<' '<<id2<<'\n';
   gc_buf[disk_id][gc_top[disk_id]++][0] = id1;
   gc_buf[disk_id][gc_top[disk_id]++][1] = id2;
 }

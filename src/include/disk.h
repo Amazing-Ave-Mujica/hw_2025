@@ -93,9 +93,11 @@ public:
   auto Swap(int x,int y,int tp)->void{//两个都有(1)或者一有一无(0)
     assert(x >= 0 && x < capacity_); // 确保索引合法
     assert(y >= 0 && y < capacity_); // 确保索引合法
-    if(tp==1){
-      free_block_idck_idck_.insert(y); // 将块重新加入空闲块集合
-      free_block_idck_idck_.erase(x);                    // 更新空闲块数量
+    if(tp==0){
+      assert(storage_[x].first != -1 && storage_[y].first == -1); // 确保至少有一个块为空
+      assert(!free_block_idck_idck_.count(x)&&free_block_idck_idck_.count(y));
+      free_block_idck_idck_.insert(x); // 将块重新加入空闲块集合
+      free_block_idck_idck_.erase(y);                    // 更新空闲块数量
     }
     std::swap(storage_[x], storage_[y]); // 交换两个块的内容
   }

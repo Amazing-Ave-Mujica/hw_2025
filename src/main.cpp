@@ -28,8 +28,8 @@ auto main() -> int {
 
 
 
-  std::ios::sync_with_stdio(false);
-  std::cin.tie(nullptr);
+  // std::ios::sync_with_stdio(false);
+  // std::cin.tie(nullptr);
 
   int t, m, n, v, g,k; // NOLINT
   std::cin >> t >> m >> n >> v >>

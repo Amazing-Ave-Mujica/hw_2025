@@ -459,12 +459,18 @@ public:
     return mirror_disks_[disk_id].read_count_; // 获取读取次数
   }
 
-  auto Swap(int disk_id, int x, int y,int tp) -> void {//两个都有(1)或者一有一无(0)
+  auto Swap(int disk_id, int x, int y,int tp,std::pair<int,int>o1,std::pair<int,int>o2) -> void {//两个都有(1)或者一有一无(0)
+    // return;
+    // std::cerr<<"StartSwap\n";
     printer::GCAdd(disk_id, x, y);
+    // std::cerr<<"GCAdd\n";
     auto &disk = disks_[disk_id];
     disk.Swap(x, y,tp);                            // 磁盘交换数据
+    // std::cerr<<"OK\n";
     seg_mgr_->Swap(disk_id,x,y,tp); // 更新段信息
-    scheduler_->Swap(disk_id,x,y,tp);
+    // std::cerr<<"OK\n";
+    scheduler_->Swap(disk_id,x,y,tp,o1,o2);
+    // std::cerr<<"OK\n";
   }
   auto GarbageCollection(int k) -> void {
 
@@ -505,7 +511,9 @@ public:
               break;
             }
             if(lef[seg.disk_id_]-->0){
-              Swap(seg.disk_addr_,i,j,0);//两个都有(1)或者一有一无(0)
+              // std::cerr<<disk.storage_[j].first<<" "<<disk.storage_[i].first<<'\n';
+              // std::cerr<<seg.disk_id_<<' '<<i<<' '<<j<<'\n';
+              Swap(seg.disk_id_,j,i,0,disk.storage_[i],disk.storage_[j]);//两个都有(1)或者一有一无(0)
             }
           }
         }

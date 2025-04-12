@@ -32,7 +32,7 @@ add_custom_target(run
 endif()
 
 add_custom_target(debug
-  python ../tools/run.py ../tools/interactor.exe ../data/sample.in ./code_craft.exe -d
+  python ../tools/run.py ../tools/interactor.exe ../data/sample_practice.in ./code_craft.exe -d
 )
 
 add_custom_target(submit

@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cassert>
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -80,6 +81,7 @@ public:
         if(it->idisk_[i]==disk_id){
           for(auto &p:it->tdisk_[i]){
             if(p==x){
+              // std::cerr<<disk_id<<' '<<it->id_<<' '<<x<<' '<<y<<'\n';
               p=y;
             }
             else if(p==y){
