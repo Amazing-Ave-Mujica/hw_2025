@@ -8,74 +8,76 @@
 #include <numeric>
 #include <vector>
 
-struct Spearman{
+struct Spearman {
   // 结构体用于存储值及其原始索引
-struct RankData {
-  db value;//NOLINT
-  int index;//NOLINT
-};
+  struct RankData {
+    db value;  // NOLINT
+    int index; // NOLINT
+  };
 
-// 比较函数用于排序
-static auto compare(RankData a, RankData b) -> bool { // NOLINT
-  return a.value < b.value;
-}
-
-// 计算秩
-auto getRanks(const  std::vector<db>& data) ->std::vector<db>{//NOLINT
-  int n = data.size();
-  std::vector<RankData> rankData(n);//NOLINT
-  
-  // 记录原始值和索引
-  for (int i = 0; i < n; i++) {
-      rankData[i] = {data[i], i};
+  // 比较函数用于排序
+  static auto compare(RankData a, RankData b) -> bool { // NOLINT
+    return a.value < b.value;
   }
 
-  // 按值排序
-  sort(rankData.begin(), rankData.end(), compare);//NOLINT
-
   // 计算秩
-  std::vector<db> ranks(n);
-  int i = 0;
-  while (i < n) {
+  auto getRanks(const std::vector<db> &data) -> std::vector<db> { // NOLINT
+    int n = data.size();
+    std::vector<RankData> rankData(n); // NOLINT
+
+    // 记录原始值和索引
+    for (int i = 0; i < n; i++) {
+      rankData[i] = {data[i], i};
+    }
+
+    // 按值排序
+    sort(rankData.begin(), rankData.end(), compare); // NOLINT
+
+    // 计算秩
+    std::vector<db> ranks(n);
+    int i = 0;
+    while (i < n) {
       int j = i;
-      db sumRank = 0.0;//NOLINT
+      db sumRank = 0.0; // NOLINT
       while (j < n && rankData[j].value == rankData[i].value) {
-          sumRank += (j + 1);  // 1-based rank
-          j++;
+        sumRank += (j + 1); // 1-based rank
+        j++;
       }
-      db avgRank = sumRank / (j - i);//NOLINT
+      db avgRank = sumRank / (j - i); // NOLINT
       for (int k = i; k < j; k++) {
-          ranks[rankData[k].index] = avgRank;
+        ranks[rankData[k].index] = avgRank;
       }
       i = j;
+    }
+
+    return ranks;
   }
 
-  return ranks;
-}
-
-// 计算斯皮尔曼秩相关系数
-auto spearmanCorrelation(const std::vector<db>& x, const std::vector<db>& y)->db {//NOLINT
-  int n = x.size();
-  if (n != y.size() || n == 0) {
+  // 计算斯皮尔曼秩相关系数
+  auto spearmanCorrelation(const std::vector<db> &x, const std::vector<db> &y)
+      -> db { // NOLINT
+    int n = x.size();
+    if (n != y.size() || n == 0) {
       std::cerr << "Error: Input vectors must have the same non-zero size.\n";
       return NAN;
-  }
+    }
 
-  // 计算秩
-  std::vector<db> rankX = getRanks(x);//NOLINT
-  std::vector<db> rankY = getRanks(y);//NOLINT
+    // 计算秩
+    std::vector<db> rankX = getRanks(x); // NOLINT
+    std::vector<db> rankY = getRanks(y); // NOLINT
 
-  // 计算秩差的平方和
-  db dSquaredSum = 0.0;//NOLINT
-  for (int i = 0; i < n; i++) {
+    // 计算秩差的平方和
+    db dSquaredSum = 0.0; // NOLINT
+    for (int i = 0; i < n; i++) {
       db d = rankX[i] - rankY[i];
       dSquaredSum += d * d;
-  }
+    }
 
-  // 计算斯皮尔曼相关系数
-  db spearman = 1.0 - (6.0 * dSquaredSum) / std::max(1,(n * (n * n - 1)));//NOLINT
-  return spearman;
-}
+    // 计算斯皮尔曼相关系数
+    db spearman =
+        1.0 - (6.0 * dSquaredSum) / std::max(1, (n * (n * n - 1))); // NOLINT
+    return spearman;
+  }
 };
 static constexpr int TIME_SLICE_DIVISOR =
     config::TIME_SLICE_DIVISOR; // 常量替代魔法数字
@@ -119,13 +121,13 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
   if constexpr (config::WritePolicy() == config::compact) {
     for (int i = 0; i < m; i++) {
       if (i < m - 1) {
-        resource[i] = max_allocate[i] * (2*n * (v / 6)) /
+        resource[i] = max_allocate[i] * (2 * n * (v / 6)) /
                       std::accumulate(max_allocate.begin(), max_allocate.end(),
                                       0); // 按比例分配资源
       } else {
         resource[i] =
-            2*n * (v / 6) - std::accumulate(resource.begin(), resource.end(),
-                                          0); // 剩余资源分配给最后一个标签
+            2 * n * (v / 6) - std::accumulate(resource.begin(), resource.end(),
+                                              0); // 剩余资源分配给最后一个标签
       }
     }
   } else {
@@ -146,9 +148,9 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
     for (int j = 0; j < m; j++) {
       std::vector<db> read_data_i(read_data[i].size());
       std::vector<db> read_data_j(read_data[j].size());
-      for(int t=0;t<read_data_i.size();t++){
-        read_data_i[t]=read_data[i][t];
-        read_data_j[t]=read_data[j][t];
+      for (int t = 0; t < read_data_i.size(); t++) {
+        read_data_i[t] = read_data[i][t];
+        read_data_j[t] = read_data[j][t];
       }
       alpha[i][j] = Spearman().spearmanCorrelation(read_data_i, read_data_j);
     }
@@ -156,12 +158,12 @@ auto InitResourceAllocator(int t, int m, int n, int v, int g,
 
   // 初始化资源分配器并求解
   if constexpr (config::WritePolicy() == config::compact) {
-    ResourceAllocator ra(m, n, v / 3, 4*g/3, resource, alpha);
+    ResourceAllocator ra(m, n, v / 3, 4 * g / 3, resource, alpha);
     ra.Solve();
-    auto sol=ra.GetBestSolution();
-    for(auto&x:sol){
-      for(int i=0;i<n;i++){
-        x[i]/=2;
+    auto sol = ra.GetBestSolution();
+    for (auto &x : sol) {
+      for (int i = 0; i < n; i++) {
+        x[i] /= 2;
         x.push_back(x[i]);
       }
     }
@@ -177,7 +179,7 @@ auto InitTSP(int n, int m, const std::vector<std::vector<db>> &alpha,
     -> std::vector<std::vector<int>> {
   std::vector<std::vector<int>> ans;
 #ifdef USINGTSP
-  for (int _ = 0; _ < 2*n; _++) {
+  for (int _ = 0; _ < 2 * n; _++) {
     std::vector<std::vector<db>> dist(m, std::vector<db>(m, 0));
     for (int i = 0; i < m; i++) {
       for (int j = 0; j < m; j++) {
@@ -201,4 +203,4 @@ auto InitTSP(int n, int m, const std::vector<std::vector<db>> &alpha,
   return ans;
 #endif
 }
-//1012
+// 1012

@@ -20,7 +20,7 @@ int buf[4]
                                        // 2^20 个请求
 int top[4] = {0};
 std::string ops[config::MAX_N][2]; // 每个磁盘的操作记录（最多支持 10 个磁盘）
-int gc_top[config::MAX_N] = {0}; // 垃圾回收操作的索引
+int gc_top[config::MAX_N] = {0};   // 垃圾回收操作的索引
 int gc_buf[config::MAX_N][config::PRINTER_BUF_CAPACITY][2];
 
 // 请求类型的枚举
@@ -28,20 +28,20 @@ int gc_buf[config::MAX_N][config::PRINTER_BUF_CAPACITY][2];
 // WRITE: 写入请求
 // READ: 读取请求
 // NOLINTNEXTLINE
-enum { DELETE = 0, WRITE, READ,READBUSY,GC };
+enum { DELETE = 0, WRITE, READ, READBUSY, GC };
 
 // 清空指定类型的缓冲区和操作记录
 // 参数：
 // - idx: 要清空的缓冲区索引
 void Clean(int idx) {
   std::cout.flush(); // 刷新输出流
-  if (idx == GC){
-    for(int & i : gc_top){
+  if (idx == GC) {
+    for (int &i : gc_top) {
       i = 0; // 重置垃圾回收操作的索引
     }
     return;
   }
-  top[idx] = 0;      // 重置缓冲区大小
+  top[idx] = 0; // 重置缓冲区大小
   for (auto &op : ops) {
     op[0].clear(); // 清空操作记录
     op[1].clear(); // 清空操作记录
@@ -84,12 +84,11 @@ void ReadAddRead(int DiskNum, int cnt) {
 void ReadSetJump(int DiskNum, int DiskblockID) {
   int diskhead = static_cast<int>(DiskNum >= config::REAL_DISK_CNT);
   DiskNum -= DiskNum >= config::REAL_DISK_CNT ? config::REAL_DISK_CNT : 0;
-  ops[DiskNum][diskhead] = "j " + std::to_string(DiskblockID + 1); // 添加跳转操作
+  ops[DiskNum][diskhead] =
+      "j " + std::to_string(DiskblockID + 1); // 添加跳转操作
 }
 
-void ReadAddBusy(int RequestID){
-  buf[READBUSY][top[READBUSY]++] = RequestID;
-}
+void ReadAddBusy(int RequestID) { buf[READBUSY][top[READBUSY]++] = RequestID; }
 
 // 添加写入对象到缓冲区
 // 参数：
@@ -120,7 +119,11 @@ auto PrintWrite(ObjectPool &obj_pool) -> void {
     std::cout << buf[WRITE][i] + 1 << '\n'; // 打印写入对象的 ID（从 1 开始）
     auto obj = obj_pool.GetObjAt(buf[WRITE][i]); // 获取对象
     for (int j = 0; j < 3; j++) {                // 遍历对象的每个副本
-      std::cout << (obj->idisk_[j] >= config::REAL_DISK_CNT ? obj->idisk_[j] - config::REAL_DISK_CNT : obj->idisk_[j]) + 1 << ' '; // 打印副本所在的磁盘编号
+      std::cout << (obj->idisk_[j] >= config::REAL_DISK_CNT
+                        ? obj->idisk_[j] - config::REAL_DISK_CNT
+                        : obj->idisk_[j]) +
+                       1
+                << ' '; // 打印副本所在的磁盘编号
       for (auto it : obj->tdisk_[j]) {
         std::cout << it + 1 << ' '; // 打印副本的块编号
       }
@@ -135,7 +138,7 @@ auto PrintWrite(ObjectPool &obj_pool) -> void {
 // - N: 磁盘数量
 auto PrintRead(int N) -> void {
   for (int i = 0; i < N; i++) {
-    for(int j = 0;j < 2;j++){
+    for (int j = 0; j < 2; j++) {
       auto &op = ops[i][j];
       if (op.empty() || op.back() == 'r' || op.back() == 'p') {
         op.push_back('#'); // 添加 '#' 表示操作结束
@@ -148,24 +151,24 @@ auto PrintRead(int N) -> void {
     std::cout << buf[READ][i] << '\n'; // 打印每个读取请求的 ID
   }
   std::cout << top[READBUSY] << '\n'; // 打印读取请求的数量
-  for(int i = 0;i < top[READBUSY];i++){
+  for (int i = 0; i < top[READBUSY]; i++) {
     std::cout << buf[READBUSY][i] << '\n'; // 打印每个读取请求的 ID
   }
-  Clean(READ); // 清空读取请求缓冲区
+  Clean(READ);     // 清空读取请求缓冲区
   Clean(READBUSY); // 清空读取请求缓冲区
 }
 
-auto GCAdd(int disk_id,int id1,int id2){
+auto GCAdd(int disk_id, int id1, int id2) {
   // std::cerr<<disk_id<<' '<<id1<<' '<<id2<<'\n';
   gc_buf[disk_id][gc_top[disk_id]++][0] = id1;
   gc_buf[disk_id][gc_top[disk_id]++][1] = id2;
 }
 
-auto GCPrint(int N){
+auto GCPrint(int N) {
   std::cout << "GARBAGE COLLECTION\n";
-  for(int i = 0;i < N;i++){
+  for (int i = 0; i < N; i++) {
     std::cout << gc_top[i] << '\n';
-    for(int j = 0;j < gc_top[i];j++){
+    for (int j = 0; j < gc_top[i]; j++) {
       std::cout << gc_buf[i][j][0] + 1 << ' ' << gc_buf[i][j][1] + 1 << '\n';
     }
   }

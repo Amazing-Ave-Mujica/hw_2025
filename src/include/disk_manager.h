@@ -3,11 +3,11 @@
 #include "config.h"
 #include "disk.h"
 #include "disk_manager.h"
+#include "garbage_collection.h"
 #include "object.h"
 #include "printer.h"
 #include "scheduler.h"
 #include "segment.h"
-#include "garbage_collection.h"
 #include <algorithm>
 #include <cassert>
 #include <functional>
@@ -34,9 +34,9 @@ public:
   // - G: 磁盘的生命周期
   DiskManager(ObjectPool *obj_pool, Scheduler *scheduler,
               SegmentManager *seg_mgr, std::vector<std::vector<db>> alpha,
-              int N, int M, int V, int G,int K)
+              int N, int M, int V, int G, int K)
       : disk_cnt_(N), life_(G), obj_pool_(obj_pool), scheduler_(scheduler),
-        alpha_(std::move(alpha)), seg_mgr_(seg_mgr), tag_sf_(M),ga_(alpha,K) {
+        alpha_(std::move(alpha)), seg_mgr_(seg_mgr), tag_sf_(M), ga_(alpha, K) {
     std::iota(tag_sf_.begin(), tag_sf_.end(), 0);
     disks_.reserve(disk_cnt_); // 预留磁盘数量的空间
     mirror_disks_.reserve(disk_cnt_ + disk_cnt_);
@@ -163,8 +163,7 @@ public:
 
     auto check_by_segment = [&](int od, int kth) {
       auto &disk = disks_[od];
-      auto ptr =
-          seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
+      auto ptr = seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
       if (ptr == nullptr) {
         return false; // 如果没有找到合适的段，返回 false
       }
@@ -177,22 +176,22 @@ public:
 
     auto write_by_segment = [&](int od, int kth) {
       auto &disk = disks_[od];
-      auto ptr =
-          seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
-      object->idisk_[kth] = od; // 设置副本所在磁盘
+      auto ptr = seg_mgr_->Find(tag, od, object->size_); // 查找合适的段
+      object->idisk_[kth] = od;                          // 设置副本所在磁盘
       for (int j = 0; j < object->size_; j++) {
-        auto& block_id = object->tdisk_[kth][j];
+        auto &block_id = object->tdisk_[kth][j];
         block_id = disk.WriteBlock(ptr->disk_addr_, oid, j); // 写入数据到段
       }
       seg_mgr_->Write(ptr, object->size_); // 更新段信息
       return true;                         // 写入成功
     };
 
-    if(kth==0){
-      for(int i : tag_sf_){
-        tag=i;
+    if (kth == 0) {
+      for (int i : tag_sf_) {
+        tag = i;
         for (auto od : sf) {
-          if (kth == 0 && write_to_disk(od, check_by_segment, write_by_segment)) {
+          if (kth == 0 &&
+              write_to_disk(od, check_by_segment, write_by_segment)) {
             return true;
           }
         }
@@ -260,9 +259,9 @@ public:
   void Read(int disk_id) {
     int time = life_; // 初始化读取时间
 
-    #ifdef SINGLE_READ_MODE
+#ifdef SINGLE_READ_MODE
     ReadSingle(disk_id, time);
-    #else
+#else
     auto &disk = mirror_disks_[disk_id];
 
     // 读取最近的 k 个任务，按距离升序存储
@@ -459,29 +458,34 @@ public:
     return mirror_disks_[disk_id].read_count_; // 获取读取次数
   }
 
-  auto Swap(int disk_id, int x, int y,int tp,std::pair<int,int>o1,std::pair<int,int>o2) -> void {//两个都有(1)或者一有一无(0)
+  // x -> y
+  auto Trans(int disk_id, int x, int y) -> void {
     // return;
     // std::cerr<<"StartSwap\n";
     printer::GCAdd(disk_id, x, y);
     // std::cerr<<"GCAdd\n";
     auto &disk = disks_[disk_id];
-    disk.Swap(x, y,tp);                            // 磁盘交换数据
+
+    auto [oid, idx] = disk.GetStorageAt(x);
+    
+    scheduler_->Trans(disk_id, x, y, oid, idx);
+
+    disk.Trans(x, y); // 磁盘交换数据
     // std::cerr<<"OK\n";
-    seg_mgr_->Swap(disk_id,x,y,tp); // 更新段信息
+    seg_mgr_->Trans(disk_id, x, y); // 更新段信息
     // std::cerr<<"OK\n";
-    scheduler_->Swap(disk_id,x,y,tp,o1,o2);
     // std::cerr<<"OK\n";
   }
   auto GarbageCollection(int k) -> void {
 
     // return;
-    
+
     if constexpr (config::WritePolicy() == config::WRITEPOLICIES::compact) {
       static bool f = false;
       static std::vector<std::vector<int>> idx(disk_cnt_);
       [&]() {
         if (f) {
-          return ;
+          return;
         }
         for (int i = 0, len = tag_sf_.size(); i < len; i++) {
           for (auto &s : seg_mgr_->segs_[i]) {
@@ -496,24 +500,23 @@ public:
         }
         f = true;
       }();
-      std::vector<int>lef(disk_cnt_, k);
-      for(auto&seg_list:seg_mgr_->segs_){
-        for(auto&seg:seg_list){
-          auto&disk=disks_[seg.disk_id_];
-          for(int i=seg.disk_addr_,j=seg.disk_addr_+seg.size_-1;i<j;i++){
-            if(disk.storage_[i].first!=-1){
+      std::vector<int> lef(disk_cnt_, k);
+      for (auto &seg_list : seg_mgr_->segs_) {
+        for (auto &seg : seg_list) {
+          auto &disk = disks_[seg.disk_id_];
+          for (int i = seg.disk_addr_, j = seg.disk_addr_ + seg.size_ - 1;
+               i < j; i++) {
+            if (disk.storage_[i].first != -1) {
               continue;
             }
-            while(i<j&&disk.storage_[j].first==-1){
+            while (i < j && disk.storage_[j].first == -1) {
               j--;
             }
-            if(i>=j){
+            if (i >= j) {
               break;
             }
-            if(lef[seg.disk_id_]-->0){
-              // std::cerr<<disk.storage_[j].first<<" "<<disk.storage_[i].first<<'\n';
-              // std::cerr<<seg.disk_id_<<' '<<i<<' '<<j<<'\n';
-              Swap(seg.disk_id_,j,i,0,disk.storage_[i],disk.storage_[j]);//两个都有(1)或者一有一无(0)
+            if (lef[seg.disk_id_]-- > 0) {
+              Trans(seg.disk_id_, j, i);
             }
           }
         }
@@ -522,14 +525,14 @@ public:
   }
 
 private:
-  const int disk_cnt_;                 // 磁盘数量
-  const int life_;                     // 磁盘生命周期
-  ObjectPool *obj_pool_;               // 对象池
-  Scheduler *scheduler_;               // 调度器
-  SegmentManager *seg_mgr_;            // 段管理器
-  std::vector<Disk> disks_;            // 磁盘列表
-  std::vector<MirrorDisk> mirror_disks_;     // 虚拟磁盘
-  std::vector<std::vector<db>> alpha_; // 相似矩阵
-  std::vector<int> tag_sf_;            // 标签排序
-  GarbageAllocator ga_;//垃圾清理
+  const int disk_cnt_;                   // 磁盘数量
+  const int life_;                       // 磁盘生命周期
+  ObjectPool *obj_pool_;                 // 对象池
+  Scheduler *scheduler_;                 // 调度器
+  SegmentManager *seg_mgr_;              // 段管理器
+  std::vector<Disk> disks_;              // 磁盘列表
+  std::vector<MirrorDisk> mirror_disks_; // 虚拟磁盘
+  std::vector<std::vector<db>> alpha_;   // 相似矩阵
+  std::vector<int> tag_sf_;              // 标签排序
+  GarbageAllocator ga_;                  // 垃圾清理
 };

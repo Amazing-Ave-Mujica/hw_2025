@@ -31,9 +31,15 @@ add_custom_target(run
 )
 endif()
 
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 add_custom_target(debug
-  python ../tools/run.py ../tools/interactor.exe ../data/sample_practice.in ./code_craft.exe -d
+  python ../tools/run.py ../tools/interactor.exe ../data/sample.in ./code_craft.exe -d
 )
+else()
+add_custom_target(debug
+  python ../tools/run.py ../tools/interactor ../data/sample.in ./code_craft -d
+)
+endif()
 
 add_custom_target(submit
     COMMAND ${CMAKE_COMMAND} -E tar cfv submission.zip --format=zip

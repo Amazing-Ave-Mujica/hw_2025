@@ -75,8 +75,8 @@ public:
         addr += cur;                // 更新起始地址
       }
       for (int _ = 0; _ < M; _++) { // 遍历每个标签
-        int j = tsp[i+N][_];
-        auto cur = std::min(t[j][i+N], rem); // 当前标签在该磁盘上的分配
+        int j = tsp[i + N][_];
+        auto cur = std::min(t[j][i + N], rem); // 当前标签在该磁盘上的分配
         segs_[j].emplace_back(i, addr, j,
                               cur); // 创建段并添加到对应标签的段列表
         rem -= cur;                 // 更新剩余容量
@@ -94,20 +94,20 @@ public:
   // 返回值：指向满足条件的段的指针，如果没有找到则返回 nullptr
   auto Find(int tag, int disk_id, int size) -> Segment * {
     static std::mt19937 rng(config::RANDOM_SEED);
-    std::array<Segment*,3>vec;
-    int tot=0;
+    std::array<Segment *, 3> vec;
+    int tot = 0;
     for (auto &s : segs_[tag]) {   // 遍历指定标签的段列表
       if (s.disk_id_ != disk_id) { // 如果段不在指定磁盘上，跳过
         continue;
       }
       if (s.size_ + size <= s.capacity_) { // 如果段有足够的剩余容量
-        vec[tot++]=&s;                       // 返回段的指针
+        vec[tot++] = &s;                   // 返回段的指针
       }
     }
-    if(tot==0){
+    if (tot == 0) {
       return nullptr; // 没有找到满足条件的段
     }
-    return vec[rng()%tot];
+    return vec[rng() % tot];
   }
 
   // 查找包含指定块的段
@@ -156,10 +156,9 @@ public:
     }
     return false; // 没有找到包含指定块的段
   }
-  auto Swap(int disk_id,int x,int y,int tp)->void{
-    if(tp==1) {return;} //两个都有(1)或者一有一无(0)
-    for(auto &lst:segs_){
-      for (auto &s : lst) {   // 遍历所有标签的段列表
+  auto Trans(int disk_id, int x, int y) -> void {
+    for (auto &lst : segs_) {
+      for (auto &s : lst) {          // 遍历所有标签的段列表
         if (s.disk_id_ != disk_id) { // 如果段不在指定磁盘上，跳过
           continue;
         }

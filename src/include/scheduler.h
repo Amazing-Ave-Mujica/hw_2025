@@ -141,16 +141,24 @@ public:
   auto QueryReadStress() -> int {
     return read_stress_; // 返回读取压力
   }
-  auto Swap(int x,int y,int tp)->void{
-    if(tp==1) {return;}
+
+  auto Trans(int x, int y) -> void {
+    if (st_.find(x) == st_.end()) {
+      return;
+    }
+    assert(st_.find(y) == st_.end());
+    int tmp = cnt_[x];
+    Remove(x);
     st_.insert(y);
-    st_.erase(x);
+    cnt_[y] = tmp;
+    UpdateSum(y, tmp);
   }
+
 private:
   std::set<int> st_; // 使用有序集合维护块 ID，支持快速查找和删除
   std::vector<std::pair<int, int>> sum_; // 前缀和
   std::unordered_map<int, int> cnt_;     // 出现次数
-  int read_stress_{0};                  // 读取压力
+  int read_stress_{0};                   // 读取压力
 };
 
 // 每个对象一个 TaskManager，用于管理对象的任务
@@ -164,7 +172,7 @@ public:
   // 添加新任务
   // 参数：
   // - ptr: 指向任务的智能指针
-  void  NewTask(std::shared_ptr<Task> ptr) {
+  void NewTask(std::shared_ptr<Task> ptr) {
     l_[0].emplace_back(std::move(ptr)); // 将任务添加到初始状态
   }
 
@@ -205,12 +213,22 @@ public:
     }
   }
 
+  void Trans(int x, int y) {
+    for (int i = 0; i <= mask_; i++) {
+      for (auto &task_list : l_) {
+        for (auto &task : task_list) {
+          task->TransWork(x, y);
+        }
+      }
+    }
+  }
+
   // 友元函数，用于打印删除的对象
   friend void printer::AddDeleteObject(TaskManager &t);
 
 private:
   bool valid_{true}; // 表示对象是否已经被删除
-  int mask_; // 状态掩码，用于表示块的读取状态
+  int mask_;         // 状态掩码，用于表示块的读取状态
   // 状态压缩，最多支持 32 种块的读/未读状态
   std::vector<std::list<std::shared_ptr<Task>>> l_;
 };
@@ -248,16 +266,16 @@ public:
   // - size: 对象的块数
   void NewTaskMgr(int oid, int size) {
     assert(oid == task_mgr_.size()); // 确保对象 ID 与任务管理器的大小一致
-    task_mgr_.emplace_back(size); // 创建新的任务管理器
+    task_mgr_.emplace_back(size);    // 创建新的任务管理器
   }
 
   // 添加新任务
   // 参数：
   // - oid: 对象 ID
   // - ptr: 指向任务的智能指针
-  void NewTask(int oid, const std::shared_ptr<Task>& ptr) {
-    assert(oid < task_mgr_.size());         // 确保对象 ID 合法
-    task_mgr_[oid].NewTask(ptr); // 添加任务到对应的任务管理器
+  void NewTask(int oid, const std::shared_ptr<Task> &ptr) {
+    assert(oid < task_mgr_.size()); // 确保对象 ID 合法
+    task_mgr_[oid].NewTask(ptr);    // 添加任务到对应的任务管理器
     req_list_.push_back(ptr);
   }
 
@@ -307,7 +325,8 @@ public:
       int disk_id = object->idisk_[i];
       for (auto y : object->tdisk_[i]) {
         q_[disk_id].Remove(y); // 从读取队列中移除块
-        q_[disk_id + config::REAL_DISK_CNT].Remove(y); // 从镜像磁盘的读取队列中移除块
+        q_[disk_id + config::REAL_DISK_CNT].Remove(
+            y); // 从镜像磁盘的读取队列中移除块
       }
     }
     printer::AddDeleteObject(task_mgr_[oid]); // 打印删除的任务
@@ -326,24 +345,36 @@ public:
     for (int i = 0; i < 3; i++) {
       int disk_id = object->idisk_[i];
       q_[disk_id].Remove(object->tdisk_[i][y]); // 从读取队列中移除块
-      q_[disk_id + config::REAL_DISK_CNT].Remove(object->tdisk_[i][y]); // 镜像磁盘也删了
+      q_[disk_id + config::REAL_DISK_CNT].Remove(
+          object->tdisk_[i][y]); // 镜像磁盘也删了
     }
     task_mgr_[oid].Update(y); // 更新任务状态
   }
 
   // [?] 获取磁盘读任务的分布，用于读调度器使用
-  void Swap(int disk_id, int x, int y, int tp,std::pair<int,int>o1,std::pair<int,int>o2) {
-    obj_pool_->Swap(disk_id, x, y,tp); // 交换对象的块 ID
-    q_[disk_id].Swap(x, y, tp); // 交换读取队列中的块
-    q_[disk_id + config::REAL_DISK_CNT].Swap(x, y, tp); // 镜像磁盘也交换
+  void Trans(int disk_id, int x, int y, int oid, int idx) {
+    // 修改 object
+    auto obj = obj_pool_->GetObjAt(oid);
+    for (int i = 0; i < 3; i++) {
+      if (obj->idisk_[i] == disk_id) {
+        obj->tdisk_[i][idx] = y;
+        break;
+      }
+    }
+    // 更新超时删除队列
+    task_mgr_[oid].Trans(x, y);
+
+    q_[disk_id].Trans(x, y);                         // 交换读取队列中的块
+    q_[disk_id + config::REAL_DISK_CNT].Trans(x, y); // 镜像磁盘也交换
   }
+
   void PopOldReqs() {
     int lim = timeslice - config::REQ_BUSY_TIME;
     while (!req_list_.empty() && req_list_.front()->timestamp_ <= lim) {
       const auto &req = req_list_.front();
       // 如果对象之前没有被删除，到对应磁盘删除读请求
       if (obj_pool_->IsValid(req->oid_) && req.use_count() > 1) {
-        for (const auto& [disk_id, block_id] : req->work_) {
+        for (const auto &[disk_id, block_id] : req->work_) {
           q_[disk_id].RemoveOnce(block_id);
         }
         printer::ReadAddBusy(req->tid_);
@@ -360,8 +391,8 @@ private:
       删除其中某个属性 = xxx 的所有元素
     （用于其他磁盘读取了同样的块需要删，或者删除了某个 object）
   */
-  ObjectPool *obj_pool_;              // 对象池，用于管理对象
-  std::vector<RTQ> q_;                // 每个磁盘的读取队列
-  std::vector<TaskManager> task_mgr_; // 每个对象的任务管理器
+  ObjectPool *obj_pool_;                      // 对象池，用于管理对象
+  std::vector<RTQ> q_;                        // 每个磁盘的读取队列
+  std::vector<TaskManager> task_mgr_;         // 每个对象的任务管理器
   std::list<std::shared_ptr<Task>> req_list_; // 支持删除 105 个时间片前的任务
 };
