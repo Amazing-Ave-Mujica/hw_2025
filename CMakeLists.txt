@@ -23,11 +23,11 @@ add_custom_target(check-clang-tidy
 )
 if (CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
 add_custom_target(run
-  python ../tools/run.py ../tools/interactor.exe ../data/sample_practice.in ./code_craft.exe -r 80000
+  python ../tools/run.py ../tools/interactor-live.exe ../data/sample_official.in ./code_craft.exe -r 80000
 )
 else()
 add_custom_target(run
-  python ../tools/run.py ../tools/interactor ../data/sample_practice.in ./code_craft
+  python ../tools/run.py ../tools/interactor-live ../data/sample_official.in ./code_craft
 )
 endif()
 

@@ -16,20 +16,25 @@
 #include <limits>
 #include <numeric>
 #include <thread>
+#include <vector>
+
 
 int timeslice = 0;
 
 auto main() -> int {
 
+
   // freopen(R"(F:/plk2025/HW-2025/data/sample_practice.in)", "r", stdin);
   // freopen(R"(F:/plk2025/HW-2025/log/code_craft.log)", "w", stdout);
 
-  // std::ios::sync_with_stdio(false);
-  // std::cin.tie(nullptr);
 
-  int t, m, n, v, g, k; // NOLINT
-  std::cin >> t >> m >> n >> v >> g >>
-      k; // 输入时间片数量、标签数量、磁盘数量、磁盘容量、生命周期
+
+  std::ios::sync_with_stdio(false);
+  std::cin.tie(nullptr);
+
+  int t, m, n, v, g,k; // NOLINT
+  std::cin >> t >> m >> n >> v >>
+      g >> k; // 输入时间片数量、标签数量、磁盘数量、磁盘容量、生命周期
   config::REAL_DISK_CNT = n;
   config::RTQ_DISK_PART_SIZE = v / m;
   config::JUMP_THRESHOLD = config::RTQ_DISK_PART_SIZE;
@@ -54,6 +59,10 @@ auto main() -> int {
       std::cin >> read_data[i][j]; // 读取数据
     }
   }
+  std::vector<int> extra_tokens((t + 104) / TIME_SLICE_DIVISOR + 1);
+  for(auto &it : extra_tokens){
+    std::cin >> it;
+  }
   // 初始化资源分配器并进行模拟退火优化
   auto [best_solution, alpha] = InitResourceAllocator(
       t, m, n, v, g, delete_data, write_data, read_data); // 获取最优解
@@ -63,8 +72,8 @@ auto main() -> int {
   ObjectPool pool(t);
   Scheduler none(&pool, n, t, v);
   SegmentManager seg_mgr(m, n, v, best_solution, tsp);
-  DiskManager dm(&pool, &none, &seg_mgr, alpha, n, m, v, g, k);
-  TopScheduler tes(&none, &pool, &dm, v);
+  DiskManager dm(&pool, &none, &seg_mgr,alpha, n,m, v, g,k);
+  TopScheduler tes(&none, &pool, &dm,v);
 
   // 同步函数
   auto sync = []() -> bool {
@@ -123,24 +132,25 @@ auto main() -> int {
   };
 
   (std::cout << "OK\n").flush(); // 输出初始化完成信息
+  
   // 主循环，处理每个时间片
   for (timeslice = 1; timeslice <= t + 105; timeslice++) {
     sync();      // 同步时间片
     delete_op(); // 处理删除操作
     write_op();  // 处理写入操作
     read_op();   // 处理读取操作
-    tes.Read();  // 执行读取操作
+    tes.Read(extra_tokens[(timeslice - 1) / TIME_SLICE_DIVISOR]);  // 执行读取操作
 
     printer::PrintRead(n); // 打印读取信息
-    if (timeslice % 1800 == 0) {
+    if (timeslice % 1800 == 0){
       gc_op(); // 垃圾回收
     }
-#ifdef ISCERR
-    if (timeslice == t + 104) {
-      for (int i = 0; i < 2 * n; i++) {
-        std::cerr << dm.GetReadCount(i) << '\n';
+  #ifdef ISCERR
+    if (timeslice ==t+104) {
+      for(int i=0;i<2*n;i++){
+        std::cerr<<dm.GetReadCount(i)<<'\n';
       }
     }
-#endif
+  #endif
   }
 }
